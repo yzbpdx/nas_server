@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Login</title>
+	<style>
+		body {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			font-family: Arial, sans-serif;
+		}
+
+		.container {
+			text-align: center;
+		}
+
+		.input-group {
+			margin-bottom: 10px;
+		}
+
+		input[type="text"],
+		input[type="password"] {
+			padding: 5px;
+			width: 200px;
+		}
+
+		.btn {
+			padding: 5px 10px;
+			background-color: #4CAF50;
+			border: none;
+			color: white;
+			cursor: pointer;
+			font-weight: bold;
+		}
+
+		.btn:hover {
+			background-color: #45a049;
+		}
+
+		.register-link {
+			color: blue;
+			text-decoration: underline;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Welcom to nas server</h1>
+		<form id="login-form" onsubmit="login(event)">
+			<div class="input-group">
+				<label for="username">Username:</label>
+				<input type="text" id="username" name="username">
+			</div>
+			<div class="input-group">
+				<label for="password">Password:</label>
+				<input type="password" id="password" name="password">
+			</div>
+			<input type="submit" class="btn" value="Login">
+		</form>
+		<p>Not registered yet? <a href="/register" class="register-link">Register</a></p>
+	</div>
+
+	<script>
+		function login(event) {
+			event.preventDefault();
+
+			var form = document.getElementById("login-form");
+			var username = form.elements.username.value;
+			var password = form.elements.password.value;
+
+			var data = {
+				username: username,
+				password: password
+			};
+
+			fetch('/login', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(data)
+			})
+			.then(response => {
+				if (response.ok) {
+					// 登录成功，跳转到首页或其他需要跳转的页面
+					window.location.href = "/home";
+				} else {
+					// 登录失败，显示错误信息
+					return response.json();
+				}
+			})
+			.then(data => {
+				// 在这里处理后端返回的错误信息，例如显示在页面上
+				console.log(data.error);
+			})
+			.catch(error => {
+				// 发生网络错误等异常情况
+				console.error('Error:', error);
+			});
+		}
+	</script>
+</body>
+</html>

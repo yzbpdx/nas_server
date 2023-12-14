@@ -6,9 +6,7 @@ import (
 )
 
 func main() {
-	logger := logs.ServerLog{}
-	logger.InitLog() 
-	logger.Logger.Infof("logger started!")
+	logs.GetInstance().Infof("logger started!")
 
 	ginRouter := router.RouterInit()
 
