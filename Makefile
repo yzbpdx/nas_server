@@ -5,4 +5,6 @@ nas_server: clean
 	go build -o ${TARGET_NAME} ./main.go
 
 clean:
-	rm ${TARGET_NAME}
+	@if [ -f ${TARGET_NAME} ]; then \
+		rm ${TARGET_NAME}; \
+	fi
