@@ -58,7 +58,7 @@
 			</div>
 			<input type="submit" class="btn" value="Login">
 		</form>
-		<p>Not registered yet? <a href="/register" class="register-link">Register</a></p>
+		<p>Not registered yet? <a href="/home" class="register-link">Register</a></p>
 	</div>
 
 	<script>
@@ -81,22 +81,13 @@
 				},
 				body: JSON.stringify(data)
 			})
-			.then(response => {
-				if (response.ok) {
-					// 登录成功，跳转到首页或其他需要跳转的页面
-					window.location.href = "/home";
-				} else {
-					// 登录失败，显示错误信息
-					return response.json();
-				}
-			})
+			.then(response => response.json())
 			.then(data => {
-				// 在这里处理后端返回的错误信息，例如显示在页面上
-				console.log(data.error);
-			})
-			.catch(error => {
-				// 发生网络错误等异常情况
-				console.error('Error:', error);
+				if (data.error) {
+					alert(data.error);
+				} else {
+					window.location.href = "/home";
+				}
 			});
 		}
 	</script>

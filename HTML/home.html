@@ -1,18 +1,98 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Gin Login Demo</title>
+    <title>Server Folder</title>
+	<style>
+		.folder-icon {
+			margin-right: 5px;
+		}
+	
+		.list-group {
+			display: flex;
+			flex-wrap: wrap;
+		}
+	
+		.list-group-item {
+			width: 100%; /* 每行显示4个文件夹，根据需求调整宽度 */
+			padding: 0.5rem;
+			border: none;
+		}
+	</style>	
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+			var currentPath
+            function getRootFolder() {
+                $.ajax({
+                    url: '/root',
+                    method: 'GET',
+                    success: function(response) {
+                        showFolders(response.folders);
+                        showFiles(response.files);
+						var pageTitle = $('h1');
+                        var pathSpan = $('<span>').text(' ' + response.currentPath);
+                        pageTitle.append(pathSpan);
+						currentPath = response.currentPath
+                    }
+                });
+            }
+
+			function getFolderFile(folderName) {
+				var data = {
+					folderName: folderName
+				};
+				$.ajax({
+                    url: '/folder',
+                    method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					data: JSON.stringify(data),
+                    success: function(response) {
+                        showFolders(response.folders);
+                        showFiles(response.files);
+						var pageTitle = $('h1');
+						pageTitle.empty();
+                        var pathSpan = $('<span>').text('Current File Path: ' + response.currentPath);
+                        pageTitle.append(pathSpan);
+						currentPath = response.currentPath
+                    }
+                });
+			}
+
+            function showFolders(folders) {
+                var foldersList = $('#foldersList');
+                foldersList.empty();
+                folders.forEach(function(folder) {
+					var link = $('<a>').attr('href', '#').text(folder);
+                    var listItem = $('<li>').append(link);
+                    foldersList.append(listItem);
+                });
+            }
+
+            function showFiles(files) {
+                var filesList = $('#filesList');
+                filesList.empty();
+                files.forEach(function(file) {
+                    var listItem = $('<li>').text(file);
+                    filesList.append(listItem);
+                });
+            }
+
+			$('#foldersList').on('click', 'li', function() {
+                var clickFolder = $(this).text();
+                getFolderFile(currentPath + clickFolder);
+            });
+
+            getRootFolder();
+        });
+    </script>
 </head>
 <body>
-	{{ if .error }}
-		<p style="color: red">{{ .error }}</p>
-	{{ end }}
-	<form action="/login" method="post">
-		<label>用户名：</label>
-		<input type="text" name="username"><br>
-		<label>密码：</label>
-		<input type="password" name="password"><br>
-		<input type="submit" value="登录">
-	</form>
+	<h1>Current File Path:</h1>
+    <h2>Folders:</h2>
+    <ul id="foldersList"></ul>
+    <h2>Files:</h2>
+    <ul id="filesList"></ul>
 </body>
 </html>
