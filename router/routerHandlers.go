@@ -8,9 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type RouterHandlers struct {
-}
-
 func LoginHandler(ctx *gin.Context) {
 	var loginform LoginForm
 	if err := ctx.ShouldBindJSON(&loginform); err != nil {
@@ -62,6 +59,18 @@ func ClickFolderHandler(ctx *gin.Context) {
 		"files":       respFiles,
 		"currentPath": folderName.FolderName + "/",
 	})
+}
+
+func DownloadHandler(ctx *gin.Context) {
+	var downloadForm DownloadForm
+	if err := ctx.ShouldBindJSON(&downloadForm); err != nil {
+		logs.GetInstance().Warnf("cannot bind downloadForm json")
+	}
+	logs.GetInstance().Infof("downloadForm: %+v", downloadForm)
+
+	ctx.Header("Content-Disposition", "attachment; filename="+downloadForm.FileName)
+    ctx.Header("Content-Type", "application/octet-stream")
+	ctx.File(downloadForm.FilePath + downloadForm.FileName)
 }
 
 func getFiles(folderName string, respFolders, respFiles *[]string) error {

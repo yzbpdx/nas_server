@@ -74,14 +74,47 @@
                 var filesList = $('#filesList');
                 filesList.empty();
                 files.forEach(function(file) {
-                    var listItem = $('<li>').text(file);
+                    var link = $('<a>').attr('href', '#').text(file);
+                    var listItem = $('<li>').append(link)
                     filesList.append(listItem);
+                });
+            }
+
+            function downloadFile(currentPath, fileName) {
+                var data = {
+                    filePath: currentPath,
+					fileName: fileName
+				};
+				$.ajax({
+                    url: '/download',
+                    method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					data: JSON.stringify(data),
+                    responseType: 'blob',
+                    success: function(response) {
+                        const fileData = response;
+                        const fileUrl = URL.createObjectURL(new Blob([fileData], {type: 'application/txt'}));
+                        // window.open(fileUrl, '_blank');
+                        const link = document.createElement('a');
+                        link.href = fileUrl;
+                        link.download = fileName;
+                        link.click();
+
+                        URL.revokeObjectURL(fileUrl);
+                    }
                 });
             }
 
 			$('#foldersList').on('click', 'li', function() {
                 var clickFolder = $(this).text();
                 getFolderFile(currentPath + clickFolder);
+            });
+
+            $('#filesList').on('click', 'li', function() {
+                var clickFile = $(this).text();
+                downloadFile(currentPath, clickFile);
             });
 
             getRootFolder();

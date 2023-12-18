@@ -12,3 +12,8 @@ type ErrorResp struct {
 type RequestFolder struct {
 	FolderName string `json:"folderName"`
 }
+
+type DownloadForm struct {
+	FilePath string `json:"filePath"`
+	FileName string `json:"fileName"`
+}
