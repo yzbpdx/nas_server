@@ -10,9 +10,19 @@
 			height: 100vh;
 			font-family: Arial, sans-serif;
 		}
+		
+		h1 {
+			margin-bottom: 20px;
+			font-size: 36px;
+			text-align: center;
+		}
 
 		.container {
-			text-align: center;
+			width: 400px;
+			padding: 20px;
+			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+			border-radius: 5px;
+			background-color: #fff;
 		}
 
 		.input-group {
@@ -22,19 +32,27 @@
 		input[type="text"],
 		input[type="password"] {
 			padding: 5px;
-			width: 200px;
+			width: 100%;
+			border-radius: 3px;
+			border: 1px solid #ccc;
+			box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
+			font-size: 16px;
+			line-height: 24px;
 		}
 
-		.btn {
-			padding: 5px 10px;
+		input[type="submit"].btn {
+			width: 100%;
+			padding: 10px;
 			background-color: #4CAF50;
 			border: none;
 			color: white;
 			cursor: pointer;
 			font-weight: bold;
+			border-radius: 3px;
+			transition: background-color 0.3s ease;
 		}
 
-		.btn:hover {
+		input[type="submit"].btn:hover {
 			background-color: #45a049;
 		}
 
@@ -58,7 +76,7 @@
 			</div>
 			<input type="submit" class="btn" value="Login">
 		</form>
-		<p>Not registered yet? <a href="/home" class="register-link">Register</a></p>
+		<p>Not registered yet? <a href="/register" class="register-link">Register</a></p>
 	</div>
 
 	<script>

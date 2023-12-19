@@ -26,6 +26,8 @@ func RouterInit() *gin.Engine {
 	ginRouter.POST("/login", LoginHandler)
 	ginRouter.POST("/folder", ClickFolderHandler)
 	ginRouter.POST("/download", DownloadHandler)
+	ginRouter.POST("/upload", UploadHandler)
+	ginRouter.POST("/create", CreateFolderHandler)
 
 	return ginRouter
 }
