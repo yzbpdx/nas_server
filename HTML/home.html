@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Server Folder</title>
+	<style>
+		body {
+			background-color: #f5f5f5;
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			font-size: 14px;
+			line-height: 1.4;
+			margin: 0;
+			padding: 0;
+		}
+
+		header {
+			background-color: #0072c6;
+			color: #fff;
+			display: flex;
+			align-items: center;
+			height: 60px;
+			padding-left: 20px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+		}
+
+		h1 {
+			font-size: 22px;
+			font-weight: bold;
+			margin: 0;
+			padding-left: 20px;
+			color: #fff;
+		}
+
+		form {
+			margin-top: 20px;
+			margin-bottom: 40px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-wrap: wrap;
+		}
+
+		label {
+			margin-right: 10px;
+			color: #0072c6;
+			font-weight: bold;
+			display: block;
+			margin-bottom: 5px;
+		}
+
+		input[type="file"] {
+			padding: 10px;
+			border: none;
+			background-color: #fff;
+			color: #0072c6;
+			font-weight: bold;
+			margin-right: 10px;
+			border-radius: 5px;
+			width: 200px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+		}
+
+		input[type="submit"] {
+			padding: 10px 20px;
+			border: none;
+			background-color: #0072c6;
+			color: #fff;
+			border-radius: 5px;
+			cursor: pointer;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+		}
+
+		input[type="submit"]:hover {
+			background-color: #005ea2;
+		}
+
+		.container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			margin-top: 30px;
+		}
+
+		.folder-icon {
+			margin-right: 10px;
+			font-size: 20px;
+			color: #0072c6;
+		}
+	
+		.list-group {
+			display: flex;
+			flex-wrap: wrap;
+			margin: 0;
+			padding: 0;
+			list-style: none;
+			width: 100%;
+		}
+	
+		.list-group-item {
+			width: calc(25% - 10px); /* 每行显示4个文件夹，根据需求调整宽度 */
+			padding: 10px;
+			border: none;
+			background-color: #fff;
+			color: #0072c6;
+			border-radius: 5px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+			margin: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+		}
+
+		.folder-link {
+            color: rgb(0, 0, 255);
+        }
+
+        .file-link {
+            color: red;
+        }
+
+        .folder-link:hover {
+            color: blue;
+            text-decoration: underline;
+        }
+
+        .file-link:hover {
+            color: red;
+            text-decoration: underline;
+        }
+
+		.file-list {
+			display: flex;
+			flex-wrap: wrap;
+			margin-top: 30px;
+			width: 100%;
+			padding: 0;
+			list-style: none;
+		}
+
+		.file-list-item {
+			width: calc(25% - 10px); /* 每行显示4个文件，根据需求调整宽度 */
+			background-color: #fff;
+			padding: 10px;
+			border-radius: 5px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+			margin: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.file-name {
+			color: #0072c6;
+			font-weight: bold;
+			font-size: 16px;
+		}
+
+		.download-icon {
+			font-size: 20px;
+			color: #0072c6;
+			cursor: pointer;
+			margin-right: 10px;
+		}
+
+		.download-icon:hover {
+			color: #005ea2;
+		}
+
+		.back-button {
+			padding: 10px 20px;
+			border: none;
+			background-color: #0072c6;
+			color: #fff;
+			border-radius: 5px;
+			cursor: pointer;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+			margin-top: 30px;
+		}
+
+		.back-button[disabled] {
+			background-color: #ccc;
+			cursor: not-allowed;
+		}
+
+		.back-button:hover:not([disabled]) {
+			background-color: #005ea2;
+		}
+
+        .new-folder-input {
+			margin-top: 10px;
+			display: flex;
+		}
+
+		.new-folder-input input[type="text"] {
+			flex-grow: 1;
+			padding: 5px;
+			border: 1px solid #ccc;
+			border-radius: 3px;
+		}
+
+		.new-folder-input button {
+			margin-left: 10px;
+			padding: 5px 10px;
+			background-color: #4CAF50;
+			border: none;
+			color: white;
+			cursor: pointer;
+			font-weight: bold;
+			border-radius: 3px;
+			transition: background-color 0.3s ease;
+		}
+
+		.new-folder-input button:hover {
+			background-color: #45a049;
+		}
+
+		.action-button {
+			font-size: 1.2rem;
+			padding: 0.5rem 1rem;
+			border: none;
+			border-radius: 0.3rem;
+			background-color: #007bff;
+			color: white;
+			cursor: pointer;
+			margin-left: 1rem;
+			transition: background-color 0.3s ease;
+		}
+
+		.action-button:hover {
+			background-color: #0069d9;
+		}
+
+		.action-button:disabled {
+			background-color: #ced4da;
+			cursor: not-allowed;
+		}
+	</style>	
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+			var currentPath
+            function getRootFolder() {
+                $.ajax({
+                    url: '/root',
+                    method: 'GET',
+                    success: function(response) {
+                        showFolders(response.folders);
+                        showFiles(response.files);
+						var pageTitle = $('h1');
+                        var pathSpan = $('<span>').text(' ' + response.currentPath);
+                        pageTitle.append(pathSpan);
+						currentPath = response.currentPath
+                        $('#backButton').prop('disabled', true)
+                    }
+                });
+            }
+
+			function getFolderFile(folderName) {
+				var data = {
+					folderName: folderName
+				};
+				$.ajax({
+                    url: '/folder',
+                    method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					data: JSON.stringify(data),
+                    success: function(response) {
+                        showFolders(response.folders);
+                        showFiles(response.files);
+						var pageTitle = $('h1');
+						pageTitle.empty();
+                        var pathSpan = $('<span>').text('Current File Path: ' + response.currentPath);
+                        pageTitle.append(pathSpan);
+						currentPath = response.currentPath
+                        if (currentPath == "./") {
+                            $('#backButton').prop('disabled', true)
+                        }
+                        else {
+                            $('#backButton').prop('disabled', false)
+                        }
+                    }
+                });
+			}
+
+            function showFolders(folders) {
+                var foldersList = $('#foldersList');
+                foldersList.empty();
+                folders.forEach(function(folder) {
+					var link = $('<a>').attr('href', '#').addClass('folder-link').text(folder);
+                    var icon = $('<i>').addClass('fas fa-folder folder-icon');
+					var checkbox = $('<input>').attr('type', 'checkbox').addClass('checkbox');
+					var listItem = $('<li>').addClass('list-group-item').append(checkbox, icon, link);
+                    foldersList.append(listItem);
+
+					$('.checkbox').on('click', function(event) {
+						event.stopPropagation();
+						$('.checkbox').not(this).prop('checked', false);
+
+						if ($('.checkbox:checked').length > 0) {
+							$('#downloadButton').prop('disabled', false);
+							$('#deleteButton').prop('disabled', false);
+							$('#renameButton').prop('disabled', false);
+						} else {
+							$('#downloadButton').prop('disabled', true);
+							$('#deleteButton').prop('disabled', true);
+							$('#renameButton').prop('disabled', true);
+						}
+					});
+                });
+            }
+
+            function showFiles(files) {
+                var filesList = $('#filesList');
+                filesList.empty();
+                files.forEach(function(file) {
+					var link = $('<a>').attr('href', '#').addClass('file-link').text(file);
+                    var icon = $('<i>').addClass('fas fa-download download-icon');
+					var checkbox = $('<input>').attr('type', 'checkbox').addClass('checkbox');
+                    var listItem = $('<li>').addClass('file-list-item').append(checkbox, link, icon);
+                    filesList.append(listItem);
+
+					$('.checkbox').on('click', function(event) {
+						event.stopPropagation();
+						$('.checkbox').not(this).prop('checked', false);
+
+						if ($('.checkbox:checked').length > 0) {
+							$('#downloadButton').prop('disabled', false);
+							$('#deleteButton').prop('disabled', false);
+							$('#renameButton').prop('disabled', false);
+						} else {
+							$('#downloadButton').prop('disabled', true);
+							$('#deleteButton').prop('disabled', true);
+							$('#renameButton').prop('disabled', true);
+						}
+					});
+                });
+            }
+
+            function downloadFile(currentPath, fileName) {
+                var data = {
+                    filePath: currentPath,
+					fileName: fileName
+				};
+				$.ajax({
+                    url: '/download',
+                    method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					data: JSON.stringify(data),
+                    responseType: 'blob',
+                    success: function(response) {
+                        const fileData = response;
+                        const fileUrl = URL.createObjectURL(new Blob([fileData], {type: 'application/octet-stream'}));
+                        // window.open(fileUrl, '_blank');
+                        const link = document.createElement('a');
+                        link.href = fileUrl;
+                        link.download = fileName;
+                        link.click();
+
+                        URL.revokeObjectURL(fileUrl);
+                    }
+                });
+            }
+
+            
+
+			$('#foldersList').on('click', 'li', function() {
+                var clickFolder = $(this).text();
+                getFolderFile(currentPath + clickFolder);
+            });
+
+            $('#filesList').on('click', 'li', function() {
+                var clickFile = $(this).text();
+                downloadFile(currentPath, clickFile);
+            });
+
+            $('#backButton').click(function() {
+                currentPath = currentPath.slice(0, currentPath.lastIndexOf('/'));
+                currentPath = currentPath.slice(0, currentPath.lastIndexOf('/'));
+                getFolderFile(currentPath);
+            });
+
+            $('#uploadForm').submit(function(event) {
+                event.preventDefault();
+                var fileInput = $('#uploadFile')[0];
+                var filename = fileInput.files[0].name;
+
+                var formData = new FormData(this);
+                formData.append('uploadFolder', currentPath)
+                formData.append('fileName', filename)
+                $.ajax({
+                    url: '/upload',
+                    method: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        alert("File uploaded successfully!");
+                        getFolderFile(currentPath);
+                    },
+                    error: function(xhr, status, error) {
+                        alert("Error uploading file.");
+                    }
+                });
+            });
+
+            $('#createFolderButton').click(function() {
+                var folderName = $('#folder-name').val();
+                if (folderName == "") {
+                    alert("Please input the folder name");
+                    return
+                }
+                var data = {
+                    currentPath: currentPath,
+					folderName: folderName
+				};
+				$.ajax({
+                    url: '/create',
+                    method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					data: JSON.stringify(data),
+                    success: function(response) {
+                        alert("Folder create successfully!");
+                        getFolderFile(currentPath);
+                    }
+                });
+            });
+
+            getRootFolder();
+        });
+    </script>
+	<script src="https://kit.fontawesome.com/4e8a32137d.js" crossorigin="anonymous"></script>
+</head>
+<body>
+	<header>
+		<h1>Current File Path: </h1>
+	</header>
+	<div class="container">
+		<div class="action-buttons-container">
+			<button id="downloadButton" class="action-button" disabled>Download</button>
+			<button id="deleteButton" class="action-button" disabled>Delete</button>
+			<button id="renameButton" class="action-button" disabled>Rename</button>
+		</div>
+		<h2>Folders:</h2>
+		<ul id="foldersList" class="list-group"></ul>
+		<h2>Files:</h2>
+		<ul id="filesList" class="file-list"></ul>
+		<button id="backButton" class="back-button" disabled>Back</button>
+		<form id="uploadForm" enctype="multipart/form-data">
+			<label for="uploadFile">Choose a file to upload:</label>
+			<input type="file" name="file" id="uploadFile">
+			<input type="submit" value="Upload">
+		</form>
+        <div class="new-folder-input">
+            <input type="text" id="folder-name" placeholder="Enter folder name">
+            <button id="createFolderButton" class="createFolder-button">Create Folder</button>
+        </div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Registration</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>User Registration</h1>
+    <form id="register-form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br><br>
+        
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        
+        <input type="submit" value="Register">
+    </form>
+    
+    <script>
+        $(document).ready(function() {
+            $('#register-form').submit(function(event) {
+                event.preventDefault();
+
+                var data = {
+                    username: $('#username').val(),
+                    password: $('#password').val()
+                }
+                
+                $.ajax({
+                    url: '/register',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify(data),
+                    success: function(response) {
+                        alert('Registration successful!');
+                        window.location.href = "/login"
+                    },
+                    error: function(xhr, status, error) {
+                        alert(error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
