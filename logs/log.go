@@ -11,27 +11,45 @@ import (
 )
 
 var (
-	Logger *logrus.Logger
-
-	logFileName string
-	once sync.Once
+	loggerInstance *Log
+	mutex sync.Mutex
 )
 
-func initLog() {
-	Logger = logrus.New()
-	Logger.SetLevel(logrus.DebugLevel)
-	now := time.Now()
-	logFileName = fmt.Sprintf("logs/log-%d-%d-%d.txt", now.Year(), now.Month(), now.Day())
-	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		Logger.Fatal(err)
-	}
-
-	Logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
+type Log struct {
+	Logger *logrus.Logger
+	
+	logFile *os.File
+	logFileName string
 }
 
-func GetInstance() *logrus.Logger {
-	once.Do(initLog)
+func (l *Log) initLog() {
+	l.Logger = logrus.New()
+	l.Logger.SetLevel(logrus.DebugLevel)
+	now := time.Now()
+	l.logFileName = fmt.Sprintf("logs/log-%d-%d-%d.txt", now.Year(), now.Month(), now.Day())
+	logFileTemp, err := os.OpenFile(l.logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		l.Logger.Fatal(err)
+	}
+	l.logFile = logFileTemp
 
-	return Logger
+	l.Logger.SetOutput(io.MultiWriter(os.Stdout, l.logFile))
+}
+
+func GetInstance() *Log {
+	if loggerInstance == nil {
+		mutex.Lock()
+		defer mutex.Unlock()
+
+		if loggerInstance == nil {
+			loggerInstance = &Log{}
+			loggerInstance.initLog()
+		}
+	}
+
+	return loggerInstance
+}
+
+func (l *Log) CloseLogFile() {
+	l.logFile.Close()
 }

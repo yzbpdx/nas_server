@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RouterInit() *gin.Engine {
+func RouterInit(folderName string) *gin.Engine {
 	ginRouter := gin.Default()
 	ginRouter.LoadHTMLGlob("HTML/*")
 
@@ -24,7 +24,9 @@ func RouterInit() *gin.Engine {
 	ginRouter.GET("/register", func(ctx *gin.Context) {
 		ctx.HTML(http.StatusOK, "register.html", gin.H{})
 	})
-	ginRouter.GET("/root", RootFolderHandler)
+	ginRouter.GET("/root", func(ctx *gin.Context) {
+		RootFolderHandler(ctx, folderName)
+	})
 
 	ginRouter.POST("/login", LoginHandler)
 	ginRouter.POST("/folder", ClickFolderHandler)

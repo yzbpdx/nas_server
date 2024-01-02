@@ -11,8 +11,11 @@ import (
 )
 
 func main() {
-	logs.GetInstance().Infof("logger started!")
-	ginRouter := router.RouterInit()
+	userFolder, _ := os.UserHomeDir()
+	rootFolder := userFolder + "/gopath"
+
+	logs.GetInstance().Logger.Infof("logger started!")
+	ginRouter := router.RouterInit(rootFolder)
 	redis.RedisInit("localhost:6379", "", 0)
 	gorm.MysqlInit("dyf", "123", "localhost:3306", "nas_server")
 
@@ -22,9 +25,10 @@ func main() {
 		for {
 			select {
 			case s := <-channel:
-				logs.GetInstance().Infof("server gracefully shutdown %v", s)
+				logs.GetInstance().Logger.Infof("server gracefully shutdown %v", s)
 				gorm.GetClient().Close()
 				redis.GetClient().Close()
+				logs.GetInstance().CloseLogFile()
 				os.Exit(0)
 			}
 		}

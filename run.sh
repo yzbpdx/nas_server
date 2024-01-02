@@ -4,10 +4,10 @@
 redis-server &
 
 # 等待 Redis 服务器启动
-sleep 5
+# sleep 5
 
 # 启动 Redis CLI
-redis-cli &
+# redis-cli &
 
 # 启动 nas_server
-./nas_server
+# ./nas_server

@@ -251,6 +251,10 @@
                         pageTitle.append(pathSpan);
 						currentPath = response.currentPath
                         $('#backButton').prop('disabled', true)
+                    },
+                    error: function(xhr, status, error) {
+                        alert("Read root file error.");
+						window.location.href = "/login";
                     }
                 });
             }
