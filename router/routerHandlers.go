@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"io"
+	"nas_server/gorm"
 	"nas_server/logs"
 	"nas_server/redis"
 	"net/http"
@@ -58,8 +59,9 @@ func RegisterHandler(ctx *gin.Context)  {
 		ctx.JSON(http.StatusBadRequest, ErrorResp{ErrorMsg: "username or password is empty"})
 		return
 	} else {
-		client := redis.GetClient()
-		if exists, err := client.Exists(context.Background(), registerForm.Username).Result(); err != nil {
+		redisClient := redis.GetClient()
+		mysqlClinet := gorm.GetClient()
+		if exists, err := redisClient.Exists(context.Background(), registerForm.Username).Result(); err != nil {
 			logs.GetInstance().Errorf("redis error %s", err)
 			ctx.JSON(http.StatusBadRequest, ErrorResp{ErrorMsg: "server error"})
 			return
@@ -68,14 +70,33 @@ func RegisterHandler(ctx *gin.Context)  {
 				logs.GetInstance().Infof("register %s exists", registerForm.Username)
 				ctx.JSON(http.StatusBadRequest, ErrorResp{ErrorMsg: "username exists"})
 				return
+			} else {
+				var count int
+				err := mysqlClinet.QueryRow("select COUNT(*) FROM user WHERE username = ?", registerForm.Username).Scan(&count)
+				if err != nil {
+					logs.GetInstance().Errorf("mysql error %s", err)
+					ctx.JSON(http.StatusBadRequest, ErrorResp{ErrorMsg: "server error"})
+					return
+				}
+				if count > 0 {
+					logs.GetInstance().Infof("register %s exists", registerForm.Username)
+					ctx.JSON(http.StatusBadRequest, ErrorResp{ErrorMsg: "username exists"})
+					return
+				}
 			}
 		}
-		_, err := client.Set(context.Background(), registerForm.Username, registerForm.PassWord, 24 * time.Hour).Result()
+		_, err := redisClient.Set(context.Background(), registerForm.Username, registerForm.PassWord, 24 * time.Hour).Result()
 		if err != nil {
 			logs.GetInstance().Errorf("redis err %s", err)
 			ctx.JSON(http.StatusBadRequest, ErrorResp{ErrorMsg: "server error"})
 			return
 		}
+		go func() {
+			_, err := mysqlClinet.Exec("INSERT INTO user (username, password) VALUES (?, ?)", registerForm.Username, registerForm.PassWord)
+			if err != nil {
+				logs.GetInstance().Errorf("mysql error %s", err)
+			}
+		}()
 		logs.GetInstance().Infof("register success with %s", registerForm.Username)
 		ctx.JSON(http.StatusOK, gin.H{})
 	}
