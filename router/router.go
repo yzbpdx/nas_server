@@ -34,6 +34,7 @@ func RouterInit(folderName string) *gin.Engine {
 	ginRouter.POST("/upload", UploadHandler)
 	ginRouter.POST("/create", CreateFolderHandler)
 	ginRouter.POST("/register", RegisterHandler)
+	ginRouter.POST("/fileInfo", FileInfoHandler)
 
 	return ginRouter
 }

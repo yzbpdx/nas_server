@@ -2,12 +2,15 @@ package router
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"nas_server/gorm"
 	"nas_server/logs"
 	"nas_server/redis"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,12 +28,16 @@ func LoginHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, ErrorResp{ErrorMsg: "username or password is empty"})
 		return
 	} else {
-		client := redis.GetClient()
-		passwordInDB, err := client.Get(context.Background(), loginForm.Username).Result()
+		redisClient := redis.GetClient()
+		mysqlClinet := gorm.GetClient()
+		passwordInDB, err := redisClient.Get(context.Background(), loginForm.Username).Result()
 		if redis.CheckNil(err) {
-			logs.GetInstance().Logger.Warnf("%s not exists", loginForm.Username)
-			ctx.JSON(http.StatusBadRequest, ErrorResp{ErrorMsg: "username not found"})
-			return
+			err = mysqlClinet.QueryRow("SELECT password FROM user WHERE username = ?", loginForm.Username).Scan(&passwordInDB)
+			if err != nil {
+				logs.GetInstance().Logger.Warnf("user %s not register", loginForm.Username)
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "you need register first"})
+				return
+			}
 		} else if err != nil {
 			logs.GetInstance().Logger.Errorf("redis error %s", err)
 			ctx.JSON(http.StatusBadRequest, ErrorResp{ErrorMsg: "redis error"})
@@ -140,6 +147,24 @@ func ClickFolderHandler(ctx *gin.Context) {
 	})
 }
 
+func FileInfoHandler(ctx *gin.Context) {
+	var downloadForm DownloadForm
+	if err := ctx.ShouldBindJSON(&downloadForm); err != nil {
+		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
+	}
+	logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadForm)
+	file, err := os.Open(downloadForm.FilePath + downloadForm.FileName)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "server open file error"})
+		logs.GetInstance().Logger.Errorf("file open error %s", err)
+		return
+	}
+	defer file.Close()
+	stat, _ := file.Stat()
+	ctx.Writer.Header().Set("fileSize", strconv.FormatInt(stat.Size(), 10))
+	// ctx.JSON(http.StatusOK, gin.H{"fileSize": strconv.FormatInt(stat.Size(), 10)})
+}
+
 func DownloadHandler(ctx *gin.Context) {
 	var downloadForm DownloadForm
 	if err := ctx.ShouldBindJSON(&downloadForm); err != nil {
@@ -147,9 +172,71 @@ func DownloadHandler(ctx *gin.Context) {
 	}
 	logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadForm)
 
-	ctx.Header("Content-Disposition", "attachment; filename="+downloadForm.FileName)
-    ctx.Header("Content-Type", "application/octet-stream")
-	ctx.File(downloadForm.FilePath + downloadForm.FileName)
+	// ctx.Header("Content-Disposition", "attachment; filename="+downloadForm.FileName)
+    // ctx.Header("Content-Type", "application/octet-stream")
+	// ctx.File(downloadForm.FilePath + downloadForm.FileName)
+	file, err := os.Open(downloadForm.FilePath + downloadForm.FileName)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "server open file error"})
+		logs.GetInstance().Logger.Errorf("file open error %s", err)
+		return
+	}
+	defer file.Close()
+	stat, _ := file.Stat()
+	ctx.Writer.Header().Set("Content-Disposition", "attachment; filename="+downloadForm.FileName)
+	ctx.Writer.Header().Set("Content-Type", "application/octet-stream")
+	ctx.Writer.Header().Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
+	ctx.Writer.Flush()
+	var offset, bufSize int64 = 0, 1024 * 1024
+	buf := make([]byte, bufSize)
+	rangeHeader := ctx.Request.Header.Get("Range")
+	if rangeHeader != "" {
+		parts := strings.Split(rangeHeader, "=")
+		if len(parts) == 2 && parts[0] == "bytes" {
+			rangeStr := parts[1]
+			ranges := strings.Split(rangeStr, "-")
+			if len(ranges) == 2 {
+				offset, _ = strconv.ParseInt(ranges[0], 10, 64)
+				if offset >= stat.Size() {
+					ctx.JSON(http.StatusRequestedRangeNotSatisfiable, gin.H{"error": "request range error"})
+					logs.GetInstance().Logger.Errorf("request range error. request: %d, file size: %d", offset, stat.Size())
+					return
+				}
+				if ranges[1] != "" {
+					endOffset, _ := strconv.ParseInt(ranges[1], 10, 64)
+					if endOffset >= stat.Size() {
+						endOffset = stat.Size() - 1
+					}
+					ctx.Writer.Header().Set("Content-Range", "bytes="+ranges[0]+"-"+strconv.FormatInt(endOffset, 10)+"/"+strconv.FormatInt(stat.Size(), 10))
+					ctx.Writer.Header().Set("Content-Length", strconv.FormatInt(endOffset-offset+1, 10))
+					file.Seek(offset, 0)
+				} else {
+					ctx.Writer.Header().Set("Content-Range", "bytes="+ranges[0]+"-"+strconv.FormatInt(stat.Size()-1, 10)+"/"+strconv.FormatInt(stat.Size(), 10))
+					ctx.Writer.Header().Set("Content-Length", strconv.FormatInt(stat.Size()-offset, 10))
+					file.Seek(offset, 0)
+				}
+				ctx.Writer.WriteHeader(http.StatusPartialContent)
+			}
+		}
+	}
+	for {
+		n, err := file.ReadAt(buf, offset)
+		if err != nil && err != io.EOF {
+			logs.GetInstance().Logger.Errorf("read file error %s", err)
+			break
+		}
+		if n == 0 {
+			break
+		}
+		_, err = ctx.Writer.Write(buf[:n])
+		if err != nil {
+			logs.GetInstance().Logger.Errorf("write file error %s", err)
+			break
+		}
+		offset += int64(n)
+		fmt.Println(n, offset)
+	}
+	ctx.Writer.Flush()
 }
 
 func UploadHandler(ctx *gin.Context) {

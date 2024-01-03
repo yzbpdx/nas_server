@@ -347,29 +347,25 @@
                     filePath: currentPath,
 					fileName: fileName
 				};
-				$.ajax({
-                    url: '/download',
-                    method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					data: JSON.stringify(data),
-                    responseType: 'blob',
-                    success: function(response) {
-                        const fileData = response;
-                        const fileUrl = URL.createObjectURL(new Blob([fileData], {type: 'application/octet-stream'}));
-                        // window.open(fileUrl, '_blank');
-                        const link = document.createElement('a');
-                        link.href = fileUrl;
-                        link.download = fileName;
-                        link.click();
+				var xhr = new XMLHttpRequest();
+				xhr.open('POST', '/download', true);
+				xhr.responseType = 'blob'
+				xhr.setRequestHeader('Content-Type', 'application/json');
 
-                        URL.revokeObjectURL(fileUrl);
-                    }
-                });
+				xhr.onreadystatechange = function() {
+					if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+						var blob = new Blob([xhr.response], { type: 'application/octet-stream' });
+						var url = URL.createObjectURL(blob);
+						var a = document.createElement('a');
+						a.href = url;
+						a.download = fileName;
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+					}
+				};
+				xhr.send(JSON.stringify(data));
             }
-
-            
 
 			$('#foldersList').on('click', 'li', function() {
                 var clickFolder = $(this).text();
