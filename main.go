@@ -25,9 +25,12 @@ func main() {
 		for {
 			select {
 			case s := <-channel:
-				logs.GetInstance().Logger.Infof("server gracefully shutdown %v", s)
+				logs.GetInstance().Logger.Infof("sql closed")
 				gorm.GetClient().Close()
+				logs.GetInstance().Logger.Infof("redis closed")
 				redis.GetClient().Close()
+				logs.GetInstance().Logger.Infof("log file closed")
+				logs.GetInstance().Logger.Infof("server gracefully shutdown %v", s)
 				logs.GetInstance().CloseLogFile()
 				os.Exit(0)
 			}

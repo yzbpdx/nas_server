@@ -238,7 +238,11 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
-			var currentPath
+			var currentPath;
+			var rootPath;
+			var checkboxSelect;
+			var selectType
+
             function getRootFolder() {
                 $.ajax({
                     url: '/root',
@@ -250,6 +254,7 @@
                         var pathSpan = $('<span>').text(' ' + response.currentPath);
                         pageTitle.append(pathSpan);
 						currentPath = response.currentPath
+						rootPath = currentPath
                         $('#backButton').prop('disabled', true)
                     },
                     error: function(xhr, status, error) {
@@ -278,12 +283,16 @@
                         var pathSpan = $('<span>').text('Current File Path: ' + response.currentPath);
                         pageTitle.append(pathSpan);
 						currentPath = response.currentPath
-                        if (currentPath == "./") {
+                        if (currentPath == rootPath) {
                             $('#backButton').prop('disabled', true)
                         }
                         else {
                             $('#backButton').prop('disabled', false)
                         }
+						checkboxSelect = ""
+						$('#downloadButton').prop('disabled', true);
+						$('#deleteButton').prop('disabled', true);
+						$('#renameButton').prop('disabled', true);
                     }
                 });
 			}
@@ -303,10 +312,13 @@
 						$('.checkbox').not(this).prop('checked', false);
 
 						if ($('.checkbox:checked').length > 0) {
+							checkboxSelect = $('.checkbox:checked').siblings('.folder-link').text();
+							selectType = "folder";
 							$('#downloadButton').prop('disabled', false);
 							$('#deleteButton').prop('disabled', false);
 							$('#renameButton').prop('disabled', false);
 						} else {
+							checkboxSelect = ""
 							$('#downloadButton').prop('disabled', true);
 							$('#deleteButton').prop('disabled', true);
 							$('#renameButton').prop('disabled', true);
@@ -330,10 +342,13 @@
 						$('.checkbox').not(this).prop('checked', false);
 
 						if ($('.checkbox:checked').length > 0) {
+							checkboxSelect = $('.checkbox:checked').siblings('.file-link').text();
+							selectType = "file";
 							$('#downloadButton').prop('disabled', false);
 							$('#deleteButton').prop('disabled', false);
 							$('#renameButton').prop('disabled', false);
 						} else {
+							checkboxSelect = ""
 							$('#downloadButton').prop('disabled', true);
 							$('#deleteButton').prop('disabled', true);
 							$('#renameButton').prop('disabled', true);
@@ -382,6 +397,37 @@
                 currentPath = currentPath.slice(0, currentPath.lastIndexOf('/'));
                 getFolderFile(currentPath);
             });
+
+			$('#renameButton').click(function() {
+				var newName = window.prompt('input new name');
+				if (newName === null) {
+					return;
+				} else if (newName === "") {
+					alert("please input something");
+					return;
+				}
+				var data = {
+					currentPath: currentPath,
+					oldName: checkboxSelect,
+					newName: newName
+				};
+				$.ajax({
+                    url: '/rename',
+                    method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					data: JSON.stringify(data),
+                    success: function(response) {
+                        alert("Rename successfully!");
+						currentPath = currentPath.slice(0, currentPath.lastIndexOf('/'));
+                        getFolderFile(currentPath);
+                    },
+                    error: function(xhr, status, error) {
+                        alert("error.");
+                    }
+                });
+			});
 
             $('#uploadForm').submit(function(event) {
                 event.preventDefault();
@@ -434,7 +480,8 @@
             getRootFolder();
         });
     </script>
-	<script src="https://kit.fontawesome.com/4e8a32137d.js" crossorigin="anonymous"></script>
+	<script src="https://gosspublic.alicdn.com/aliyun-oss-sdk-6.15.0.min.js"></script>
+	<!-- <script src="https://kit.fontawesome.com/4e8a32137d.js" crossorigin="anonymous"></script> -->
 </head>
 <body>
 	<header>

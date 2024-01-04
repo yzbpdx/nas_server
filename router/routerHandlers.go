@@ -292,6 +292,28 @@ func CreateFolderHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{})
 }
 
+func RenameHandler(ctx *gin.Context) {
+	var rename Rename
+	if err := ctx.ShouldBindJSON(&rename); err != nil {
+		logs.GetInstance().Logger.Errorf("cannot bind rename: %s", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "cannot bind rename"})
+		return
+	}
+	// logs.GetInstance().Logger.Infof("old name: %s, new name: %s", rename.OldName, rename.NewName)
+
+	rename.OldName = rename.CurrentPath + rename.OldName
+	rename.NewName = rename.CurrentPath + rename.NewName
+	logs.GetInstance().Logger.Infof("change %s to %s", rename.OldName, rename.NewName)
+
+	if err := os.Rename(rename.OldName, rename.NewName); err != nil {
+		logs.GetInstance().Logger.Errorf("os rename error: %s", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "os rename error"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
 func getFiles(folderName string, respFolders, respFiles *[]string) error {
 	files, err := os.ReadDir(folderName)
 	if err != nil {
@@ -299,6 +321,9 @@ func getFiles(folderName string, respFolders, respFiles *[]string) error {
 	}
 
 	for _, file := range files {
+		if configFile(file.Name()) {
+			continue
+		}
 		if file.IsDir() {
 			*respFolders = append(*respFolders, file.Name())
 		} else {
@@ -307,4 +332,11 @@ func getFiles(folderName string, respFolders, respFiles *[]string) error {
 	}
 
 	return nil
+}
+
+func configFile(name string) bool {
+	if name[0] == '.' {
+		return true
+	}
+	return false
 }

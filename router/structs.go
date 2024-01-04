@@ -30,3 +30,9 @@ type CreateFolder struct {
 	CurrentPath string `json:"currentPath"`
 	FolderName string `json:"folderName"`
 }
+
+type Rename struct {
+	CurrentPath string `json:"currentPath"`
+	OldName string `json:"oldName"`
+	NewName string `json:"newName"`
+}
