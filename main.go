@@ -18,9 +18,9 @@ func main() {
 	config := config.GetServerConfig()
 
 	logs.GetInstance().Logger.Infof("logger started!")
-	ginRouter := router.RouterInit(config)
-	redis.RedisInit("localhost:6379", "", 0)
-	gorm.MysqlInit("dyf", "123", "localhost:3306", "nas_server")
+	ginRouter := router.RouterInit(&config.Server)
+	redis.RedisInit(&config.Redis)
+	gorm.MysqlInit(&config.MySQL)
 
 	channel := make(chan os.Signal)
 	signal.Notify(channel, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGILL, syscall.SIGTRAP, syscall.SIGABRT)

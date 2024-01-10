@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RouterInit(config *config.Config) *gin.Engine {
+func RouterInit(serverConfig *config.ServerConfig) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	ginRouter := gin.Default()
 	ginRouter.LoadHTMLGlob("html/*")
@@ -31,21 +31,21 @@ func RouterInit(config *config.Config) *gin.Engine {
 	ginRouter.GET("/register", func(ctx *gin.Context) {
 		ctx.HTML(http.StatusOK, "register.html", gin.H{})
 	})
-	ginRouter.GET(config.HomePath + "/root", func(ctx *gin.Context) {
+	ginRouter.GET(serverConfig.HomePath + "/root", func(ctx *gin.Context) {
 		userName := ctx.Param("username")
-		folderName := filepath.Join(config.RootFolder, userName)
+		folderName := filepath.Join(serverConfig.RootFolder, userName)
 		RootFolderHandler(ctx, folderName)
 	})
 
 	ginRouter.POST("/login", LoginHandler)
-	ginRouter.POST(config.HomePath + "/folder", ClickFolderHandler)
-	ginRouter.POST(config.HomePath + "/download", DownloadHandler)
-	ginRouter.POST(config.HomePath + "/upload", UploadHandler)
-	ginRouter.POST(config.HomePath + "/create", CreateFolderHandler)
+	ginRouter.POST(serverConfig.HomePath + "/folder", ClickFolderHandler)
+	ginRouter.POST(serverConfig.HomePath + "/download", DownloadHandler)
+	ginRouter.POST(serverConfig.HomePath + "/upload", UploadHandler)
+	ginRouter.POST(serverConfig.HomePath + "/create", CreateFolderHandler)
 	ginRouter.POST("/register", RegisterHandler)
 	ginRouter.POST("/fileInfo", FileInfoHandler)
-	ginRouter.POST(config.HomePath + "/rename", RenameHandler)
-	ginRouter.POST(config.HomePath + "/delete", DeleteHandler)
+	ginRouter.POST(serverConfig.HomePath + "/rename", RenameHandler)
+	ginRouter.POST(serverConfig.HomePath + "/delete", DeleteHandler)
 
 	return ginRouter
 }

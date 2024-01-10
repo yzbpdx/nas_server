@@ -1,2 +1,15 @@
-homePath: "home/:username"
-serverFolder: "nas_server"
+server:
+  homePath: "home/:username"
+  serverFolder: "nas_server"
+  listen: "localhost:9000"
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+
+mysql:
+  name: "dyf"
+  password: "123"
+  addr: "localhost:3306"
+  db: "nas_server"

@@ -1,16 +1,18 @@
 package redis
 
 import (
+	config "nas_server/conf"
+
 	"github.com/redis/go-redis/v9"
 )
 
 var client *redis.Client
 
-func RedisInit(addr, password string, db int) {
+func RedisInit(redisConfig *config.RedisConfig) {
 	client = redis.NewClient(&redis.Options{
-		Addr: addr,
-		Password: password,
-		DB: db,
+		Addr: redisConfig.Addr,
+		Password: redisConfig.Password,
+		DB: redisConfig.DB,
 	})
 }
 
