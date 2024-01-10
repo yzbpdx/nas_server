@@ -25,7 +25,7 @@ RUN apt install -y mysql-server
 
 COPY run.sh /
 COPY nas_server /
-COPY HTML /HTML
+COPY html /html
 
 RUN mkdir logs
 

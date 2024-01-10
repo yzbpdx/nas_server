@@ -238,23 +238,28 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
+			var currentRouter = window.location.pathname;
 			var currentPath;
 			var rootPath;
 			var checkboxSelect;
-			var selectType
+			var selectType;
 
             function getRootFolder() {
                 $.ajax({
-                    url: '/root',
+                    url: currentRouter + '/root',
                     method: 'GET',
                     success: function(response) {
                         showFolders(response.folders);
                         showFiles(response.files);
-						var pageTitle = $('h1');
-                        var pathSpan = $('<span>').text(' ' + response.currentPath);
-                        pageTitle.append(pathSpan);
 						currentPath = response.currentPath
 						rootPath = currentPath
+						var pageTitle = $('h1');
+						pageTitle.empty();
+						var title = currentPath.slice(currentPath.indexOf('/') + 1, currentPath.length);
+						title = title.slice(title.indexOf('/') +  1, title.length)
+						title = title.slice(title.indexOf('/') +  1, title.length)
+                        var pathSpan = $('<span>').text('Current File Path: ' + title);
+                        pageTitle.append(pathSpan);						
                         $('#backButton').prop('disabled', true)
                     },
                     error: function(xhr, status, error) {
@@ -269,7 +274,7 @@
 					folderName: folderName
 				};
 				$.ajax({
-                    url: '/folder',
+                    url: currentRouter + '/folder',
                     method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -280,7 +285,10 @@
                         showFiles(response.files);
 						var pageTitle = $('h1');
 						pageTitle.empty();
-                        var pathSpan = $('<span>').text('Current File Path: ' + response.currentPath);
+						var title = currentPath.slice(currentPath.indexOf('/') + 1, currentPath.length);
+						title = title.slice(title.indexOf('/') +  1, title.length)
+						title = title.slice(title.indexOf('/') +  1, title.length)
+                        var pathSpan = $('<span>').text('Current File Path: ' + title);
                         pageTitle.append(pathSpan);
 						currentPath = response.currentPath
                         if (currentPath == rootPath) {
@@ -363,7 +371,7 @@
 					fileName: fileName
 				};
 				var xhr = new XMLHttpRequest();
-				xhr.open('POST', '/download', true);
+				xhr.open('POST', currentRouter + '/download', true);
 				xhr.responseType = 'blob'
 				xhr.setRequestHeader('Content-Type', 'application/json');
 
@@ -412,7 +420,7 @@
 					newName: newName
 				};
 				$.ajax({
-                    url: '/rename',
+                    url: currentRouter + '/rename',
                     method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -438,7 +446,7 @@
                 formData.append('uploadFolder', currentPath)
                 formData.append('fileName', filename)
                 $.ajax({
-                    url: '/upload',
+                    url: currentRouter + '/upload',
                     method: 'POST',
                     data: formData,
                     contentType: false,
@@ -464,7 +472,7 @@
 					folderName: folderName
 				};
 				$.ajax({
-                    url: '/create',
+                    url: currentRouter + '/create',
                     method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -480,8 +488,6 @@
             getRootFolder();
         });
     </script>
-	<script src="https://gosspublic.alicdn.com/aliyun-oss-sdk-6.15.0.min.js"></script>
-	<!-- <script src="https://kit.fontawesome.com/4e8a32137d.js" crossorigin="anonymous"></script> -->
 </head>
 <body>
 	<header>

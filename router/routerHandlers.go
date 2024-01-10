@@ -110,6 +110,9 @@ func RegisterHandler(ctx *gin.Context)  {
 }
 
 func RootFolderHandler(ctx *gin.Context, folderName string) {
+	if _, err := os.Stat(folderName); err != nil && os.IsNotExist(err) {
+		os.Mkdir(folderName, 0777)
+	}
 	respFolders := make([]string, 0)
 	respFiles := make([]string, 0)
 

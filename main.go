@@ -1,6 +1,7 @@
 package main
 
 import (
+	config "nas_server/conf"
 	"nas_server/gorm"
 	"nas_server/logs"
 	"nas_server/redis"
@@ -11,11 +12,13 @@ import (
 )
 
 func main() {
-	userFolder, _ := os.UserHomeDir()
-	rootFolder := userFolder + "/gopath"
+	// userFolder, _ := os.UserHomeDir()
+	// rootFolder := userFolder + "/gopath"
+	config.InitServerConfig("conf/server.yaml")
+	config := config.GetServerConfig()
 
 	logs.GetInstance().Logger.Infof("logger started!")
-	ginRouter := router.RouterInit(rootFolder)
+	ginRouter := router.RouterInit(config)
 	redis.RedisInit("localhost:6379", "", 0)
 	gorm.MysqlInit("dyf", "123", "localhost:3306", "nas_server")
 
