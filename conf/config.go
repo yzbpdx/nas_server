@@ -15,7 +15,7 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	HomePath string `yaml:"homePath"`
+	HomeUrl string `yaml:"homeUrl"`
 	ServerFolder string `yaml:"serverFolder"`
 	Listen string `yaml:"listen"`
 

@@ -1,5 +1,5 @@
 server:
-  homePath: "home/:username"
+  homeUrl: "home/:username"
   serverFolder: "nas_server"
   listen: "localhost:9000"
 
