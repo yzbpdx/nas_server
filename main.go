@@ -12,12 +12,10 @@ import (
 )
 
 func main() {
-	// userFolder, _ := os.UserHomeDir()
-	// rootFolder := userFolder + "/gopath"
+	logs.GetInstance().Logger.Infof("logger started!")
 	config.InitServerConfig("conf/server.yaml")
 	config := config.GetServerConfig()
-
-	logs.GetInstance().Logger.Infof("logger started!")
+	logs.GetInstance().Logger.Infof("config %+v", config)
 	ginRouter := router.RouterInit(&config.Server)
 	redis.RedisInit(&config.Redis)
 	gorm.MysqlInit(&config.MySQL)
@@ -40,5 +38,5 @@ func main() {
 		}
 	}()
 
-	ginRouter.Run(config.Server.Listen)
+	ginRouter.Run(":9000")
 }
