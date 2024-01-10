@@ -1,7 +1,7 @@
 server:
   homeUrl: "home/:username"
   serverFolder: "nas_server"
-  listen: "localhost:9000"
+  listen: "118.31.188.252:9000"
 
 redis:
   addr: "localhost:6379"
