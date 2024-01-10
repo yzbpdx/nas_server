@@ -45,6 +45,7 @@ func RouterInit(config *config.Config) *gin.Engine {
 	ginRouter.POST("/register", RegisterHandler)
 	ginRouter.POST("/fileInfo", FileInfoHandler)
 	ginRouter.POST(config.HomePath + "/rename", RenameHandler)
+	ginRouter.POST(config.HomePath + "/delete", DeleteHandler)
 
 	return ginRouter
 }

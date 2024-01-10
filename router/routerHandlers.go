@@ -317,6 +317,25 @@ func RenameHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{})
 }
 
+func DeleteHandler(ctx *gin.Context) {
+	var delete Delete
+	if err := ctx.ShouldBindJSON(&delete); err != nil {
+		logs.GetInstance().Logger.Errorf("cannot bind delete: %s", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "cannot bind delete"})
+		return
+	}
+
+	deletePath := delete.CurrentPath + delete.DeleteName
+	err := os.RemoveAll(deletePath)
+	if err != nil {
+		logs.GetInstance().Logger.Errorf("delete %s error: %s", deletePath, err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "delete error"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
 func getFiles(folderName string, respFolders, respFiles *[]string) error {
 	files, err := os.ReadDir(folderName)
 	if err != nil {

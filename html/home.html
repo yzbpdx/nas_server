@@ -437,6 +437,33 @@
                 });
 			});
 
+			$('#deleteButton').click(function() {
+				var result = window.confirm("confirm to delete?");
+				if (!result) {
+					return
+				}
+				var data = {
+					currentPath: currentPath,
+					deleteName: checkboxSelect,
+				};
+				$.ajax({
+                    url: currentRouter + '/delete',
+                    method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					data: JSON.stringify(data),
+                    success: function(response) {
+                        alert("Delete successfully!");
+						currentPath = currentPath.slice(0, currentPath.lastIndexOf('/'));
+                        getFolderFile(currentPath);
+                    },
+                    error: function(xhr, status, error) {
+                        alert("error.");
+                    }
+                });
+			});
+
             $('#uploadForm').submit(function(event) {
                 event.preventDefault();
                 var fileInput = $('#uploadFile')[0];

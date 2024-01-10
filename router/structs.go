@@ -36,3 +36,8 @@ type Rename struct {
 	OldName string `json:"oldName"`
 	NewName string `json:"newName"`
 }
+
+type Delete struct {
+	CurrentPath string `json:"currentPath"`
+	DeleteName string `json:"deleteName"`
+}
