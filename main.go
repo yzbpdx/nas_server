@@ -38,5 +38,5 @@ func main() {
 		}
 	}()
 
-	ginRouter.Run(":9000")
+	ginRouter.Run(config.Server.Listen)
 }

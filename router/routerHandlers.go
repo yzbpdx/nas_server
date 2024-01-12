@@ -9,6 +9,7 @@ import (
 	"nas_server/redis"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -126,7 +127,7 @@ func RootFolderHandler(ctx *gin.Context, folderName string) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"folders":     respFolders,
 		"files":       respFiles,
-		"currentPath": folderName + "/",
+		"currentPath": folderName,
 	})
 }
 
@@ -146,7 +147,7 @@ func ClickFolderHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"folders":     respFolders,
 		"files":       respFiles,
-		"currentPath": folderName.FolderName + "/",
+		"currentPath": folderName.FolderName,
 	})
 }
 
@@ -156,7 +157,8 @@ func FileInfoHandler(ctx *gin.Context) {
 		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
 	}
 	logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadForm)
-	file, err := os.Open(downloadForm.FilePath + downloadForm.FileName)
+	filePath := filepath.Join(downloadForm.FilePath, downloadForm.FileName)
+	file, err := os.Open(filePath)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "server open file error"})
 		logs.GetInstance().Logger.Errorf("file open error %s", err)
@@ -178,7 +180,8 @@ func DownloadHandler(ctx *gin.Context) {
 	// ctx.Header("Content-Disposition", "attachment; filename="+downloadForm.FileName)
     // ctx.Header("Content-Type", "application/octet-stream")
 	// ctx.File(downloadForm.FilePath + downloadForm.FileName)
-	file, err := os.Open(downloadForm.FilePath + downloadForm.FileName)
+	filePath := filepath.Join(downloadForm.FilePath, downloadForm.FileName)
+	file, err := os.Open(filePath)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "server open file error"})
 		logs.GetInstance().Logger.Errorf("file open error %s", err)
@@ -260,7 +263,8 @@ func UploadHandler(ctx *gin.Context) {
 	}
 	defer file.Close()
 
-	newFile, err := os.Create(uploadForm.UploadFolder + uploadForm.FileName)
+	filePath := filepath.Join(uploadForm.UploadFolder, uploadForm.FileName)
+	newFile, err := os.Create(filePath)
 	if err != nil {
 		logs.GetInstance().Logger.Errorf("new file create error: %s", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "new file create error"})
@@ -287,7 +291,8 @@ func CreateFolderHandler(ctx *gin.Context) {
 	}
 	logs.GetInstance().Logger.Infof("%+v", createFolder)
 
-	if err := os.Mkdir(createFolder.CurrentPath + createFolder.FolderName, os.ModePerm); err != nil {
+	folderPath := filepath.Join(createFolder.CurrentPath, createFolder.FolderName)
+	if err := os.Mkdir(folderPath, os.ModePerm); err != nil {
 		logs.GetInstance().Logger.Errorf("create folder error: %s", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "create folder error"})
 	}
@@ -304,8 +309,8 @@ func RenameHandler(ctx *gin.Context) {
 	}
 	// logs.GetInstance().Logger.Infof("old name: %s, new name: %s", rename.OldName, rename.NewName)
 
-	rename.OldName = rename.CurrentPath + rename.OldName
-	rename.NewName = rename.CurrentPath + rename.NewName
+	rename.OldName = filepath.Join(rename.CurrentPath, rename.OldName)
+	rename.NewName = filepath.Join(rename.CurrentPath, rename.NewName)
 	logs.GetInstance().Logger.Infof("change %s to %s", rename.OldName, rename.NewName)
 
 	if err := os.Rename(rename.OldName, rename.NewName); err != nil {
@@ -325,7 +330,7 @@ func DeleteHandler(ctx *gin.Context) {
 		return
 	}
 
-	deletePath := delete.CurrentPath + delete.DeleteName
+	deletePath := filepath.Join(delete.CurrentPath, delete.DeleteName)
 	err := os.RemoveAll(deletePath)
 	if err != nil {
 		logs.GetInstance().Logger.Errorf("delete %s error: %s", deletePath, err)
