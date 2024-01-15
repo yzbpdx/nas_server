@@ -467,6 +467,10 @@
             $('#uploadForm').submit(function(event) {
                 event.preventDefault();
                 var fileInput = $('#uploadFile')[0];
+				if (fileInput.files.length <= 0) {
+					alert("Please choose a file")
+					return
+				}
                 var filename = fileInput.files[0].name;
 
                 var formData = new FormData(this);

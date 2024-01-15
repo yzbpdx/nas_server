@@ -18,8 +18,10 @@ type ServerConfig struct {
 	HomeUrl string `yaml:"homeUrl"`
 	ServerFolder string `yaml:"serverFolder"`
 	Listen string `yaml:"listen"`
+	Share string `yaml:"share"`
 
 	RootFolder string
+	ShareFolder string
 }
 
 type RedisConfig struct {
@@ -48,13 +50,19 @@ func InitServerConfig(fileName string) {
 
 	rootFolder, _ := os.UserHomeDir()
 	config.Server.RootFolder = filepath.Join(rootFolder, config.Server.ServerFolder)
-	if _, err := os.Stat(config.Server.RootFolder); err != nil && os.IsNotExist(err) {
-		os.Mkdir(config.Server.RootFolder, 0777)
-	}
+	initFolder(config.Server.RootFolder)
+	config.Server.ShareFolder = filepath.Join(rootFolder, config.Server.Share)
+	initFolder(config.Server.Share)
 }
 
 var config = &Config{}
 
 func GetServerConfig() *Config {
 	return config
+}
+
+func initFolder(folder string) {
+	if _, err := os.Stat(folder); err != nil && os.IsNotExist(err) {
+		os.Mkdir(folder, 0777)
+	}
 }

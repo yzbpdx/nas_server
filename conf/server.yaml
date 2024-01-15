@@ -1,6 +1,7 @@
 server:
   homeUrl: "home/:username"
   serverFolder: "nas_server"
+  share: "share"
   listen: "0.0.0.0:9000"
 
 redis:
