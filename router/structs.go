@@ -1,6 +1,10 @@
 package router
 
-import "mime/multipart"
+import (
+	"mime/multipart"
+	"os"
+	"sync"
+)
 
 type UserForm struct {
 	Username string `json:"username"`
@@ -15,29 +19,50 @@ type RequestFolder struct {
 	FolderName string `json:"folderName"`
 }
 
-type DownloadForm struct {
+type DownloadInfo struct {
 	FilePath string `json:"filePath"`
 	FileName string `json:"fileName"`
+	UserName string `json:"userName"`
+
+	FileString  string
+	File        *os.File
+	Pause       chan struct{}
+	Resume      chan struct{}
+	Cancel      chan struct{}
+	Wg          sync.WaitGroup
+	Time        string
+	FileLen     int64
+	DownloadLen int64
+	Speed       string
+	Status      string
+}
+
+type DownloadResp struct {
+	FileName string  `json:"fileName"`
+	Progress float64 `json:"progress"`
+	Speed    string  `json:"speed"`
+	Time     string  `json:"time"`
+	Status   string  `json:"status"`
 }
 
 type UploadForm struct {
-	UploadFolder string `form:"uploadFolder"`
-	FileName string `form:"fileName"`
-	File *multipart.FileHeader `form:"file"`
+	UploadFolder string                `form:"uploadFolder"`
+	FileName     string                `form:"fileName"`
+	File         *multipart.FileHeader `form:"file"`
 }
 
 type CreateFolder struct {
 	CurrentPath string `json:"currentPath"`
-	FolderName string `json:"folderName"`
+	FolderName  string `json:"folderName"`
 }
 
 type Rename struct {
 	CurrentPath string `json:"currentPath"`
-	OldName string `json:"oldName"`
-	NewName string `json:"newName"`
+	OldName     string `json:"oldName"`
+	NewName     string `json:"newName"`
 }
 
 type Delete struct {
 	CurrentPath string `json:"currentPath"`
-	DeleteName string `json:"deleteName"`
+	DeleteName  string `json:"deleteName"`
 }

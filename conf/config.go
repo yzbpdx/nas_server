@@ -52,7 +52,7 @@ func InitServerConfig(fileName string) {
 	config.Server.RootFolder = filepath.Join(rootFolder, config.Server.ServerFolder)
 	initFolder(config.Server.RootFolder)
 	config.Server.ShareFolder = filepath.Join(rootFolder, config.Server.Share)
-	initFolder(config.Server.Share)
+	initFolder(config.Server.ShareFolder)
 }
 
 var config = &Config{}

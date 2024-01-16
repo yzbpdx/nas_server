@@ -73,6 +73,14 @@
 			background-color: #005ea2;
 		}
 
+		.rightLink {
+			font-size: 15px;
+			margin: 0;
+			position: absolute;
+			right: 20px;
+			color: #fff;
+		}
+
 		.container {
 			display: flex;
 			flex-direction: column;
@@ -243,8 +251,10 @@
 			var rootPath;
 			var checkboxSelect;
 			var selectType;
+			var downloadInfoLink = document.getElementById("downloadInfo");
+			downloadInfoLink.href = currentRouter + "/download/info"
 
-            function getRootFolder() {
+			function getRootFolder() {
                 $.ajax({
                     url: currentRouter + '/root',
                     method: 'GET',
@@ -484,7 +494,6 @@
                     processData: false,
                     success: function(response) {
                         alert("File uploaded successfully!");
-						// currentPath = currentPath.slice(0, currentPath.lastIndexOf('/'));
                         getFolderFile(currentPath);
 						fileInput.value = '';
                     },
@@ -525,6 +534,7 @@
 <body>
 	<header>
 		<h1>Current File Path: </h1>
+		<a href="#" target="_blank" id="downloadInfo" class="rightLink">Download Info</a>
 	</header>
 	<div class="container">
 		<div class="action-buttons-container">

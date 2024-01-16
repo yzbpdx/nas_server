@@ -2,7 +2,7 @@ package router
 
 import (
 	"context"
-	"fmt"
+	_ "fmt"
 	"io"
 	"nas_server/gorm"
 	"nas_server/logs"
@@ -152,7 +152,7 @@ func ClickFolderHandler(ctx *gin.Context) {
 }
 
 func FileInfoHandler(ctx *gin.Context) {
-	var downloadForm DownloadForm
+	var downloadForm DownloadInfo
 	if err := ctx.ShouldBindJSON(&downloadForm); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
 	}
@@ -170,17 +170,17 @@ func FileInfoHandler(ctx *gin.Context) {
 	// ctx.JSON(http.StatusOK, gin.H{"fileSize": strconv.FormatInt(stat.Size(), 10)})
 }
 
-func DownloadHandler(ctx *gin.Context) {
-	var downloadForm DownloadForm
-	if err := ctx.ShouldBindJSON(&downloadForm); err != nil {
+func DownloadHandlerV1(ctx *gin.Context) {
+	var downloadInfo DownloadInfo
+	if err := ctx.ShouldBindJSON(&downloadInfo); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
 	}
-	logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadForm)
+	logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadInfo)
 
 	// ctx.Header("Content-Disposition", "attachment; filename="+downloadForm.FileName)
     // ctx.Header("Content-Type", "application/octet-stream")
 	// ctx.File(downloadForm.FilePath + downloadForm.FileName)
-	filePath := filepath.Join(downloadForm.FilePath, downloadForm.FileName)
+	filePath := filepath.Join(downloadInfo.FilePath, downloadInfo.FileName)
 	file, err := os.Open(filePath)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "server open file error"})
@@ -189,7 +189,7 @@ func DownloadHandler(ctx *gin.Context) {
 	}
 	defer file.Close()
 	stat, _ := file.Stat()
-	ctx.Writer.Header().Set("Content-Disposition", "attachment; filename="+downloadForm.FileName)
+	ctx.Writer.Header().Set("Content-Disposition", "attachment; filename="+downloadInfo.FileName)
 	ctx.Writer.Header().Set("Content-Type", "application/octet-stream")
 	ctx.Writer.Header().Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
 	ctx.Writer.Flush()
@@ -240,7 +240,6 @@ func DownloadHandler(ctx *gin.Context) {
 			break
 		}
 		offset += int64(n)
-		fmt.Println(n, offset)
 	}
 	ctx.Writer.Flush()
 }
