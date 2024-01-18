@@ -25,6 +25,10 @@ type Log struct {
 func (l *Log) initLog() {
 	l.Logger = logrus.New()
 	l.Logger.SetLevel(logrus.DebugLevel)
+	l.Logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+	})
+	l.Logger.SetReportCaller(true)
 	now := time.Now()
 	l.logFileName = fmt.Sprintf("logs/log-%d-%d-%d.txt", now.Year(), now.Month(), now.Day())
 	logFileTemp, err := os.OpenFile(l.logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
