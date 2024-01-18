@@ -23,7 +23,7 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             margin: 0 auto;
-            max-width: 800px;
+            width: 90%;
             padding: 30px;
         }
 
@@ -81,6 +81,18 @@
             background-color: #0072c6;
             border-radius: 5px;
         }
+
+        .actions-cell button {
+            padding: 5px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .actions-cell button + button {
+            margin-left: 10px;
+        }
+
     </style>
   </head>
   <body>
@@ -164,19 +176,21 @@
                 }
                 pauseResumeButton.addEventListener('click', function() {
                     if (download.status === 'downloading') {
-                        pauseDownload(download.fileName);
+                        pauseDownload(download.fileString);
                     } else if (download.status === 'waiting') {
-                        resumeDownload(download.fileName);
+                        resumeDownload(download.fileString);
                     }
                 });
-                actionsCell.appendChild(pauseResumeButton);
 
                 var cancelButton = document.createElement('button');
                 cancelButton.textContent = 'Cancel';
                 // cancelButton.disabled = download.status !== 'waiting' && download.status !== 'downloading';
                 cancelButton.addEventListener('click', function() {
-                    cancelDownload(download.fileName);
+                    cancelDownload(download.fileString);
                 });
+
+                actionsCell.classList.add('actions-cell')
+                actionsCell.appendChild(pauseResumeButton);
                 actionsCell.appendChild(cancelButton);
 
                 row.appendChild(actionsCell);
@@ -193,10 +207,11 @@
             var xhr = new XMLHttpRequest();
             xhr.open('POST', currentRouter + '/pause');
 
-            var data = new FormData();
-            data.append('folderName', filename);
+            var data = {
+                folderName: filename
+            };
 
-            xhr.send(data);
+            xhr.send(JSON.stringify(data));
         }
 
         // 继续下载
@@ -204,10 +219,11 @@
             var xhr = new XMLHttpRequest();
             xhr.open('POST', currentRouter + '/resume');
 
-            var data = new FormData();
-            data.append('folderName', filename);
+            var data = {
+                folderName: filename
+            };
 
-            xhr.send(data);
+            xhr.send(JSON.stringify(data));
         }
 
         // 取消下载
@@ -215,10 +231,11 @@
             var xhr = new XMLHttpRequest();
             xhr.open('POST', currentRouter + '/cancel');
 
-            var data = new FormData();
-            data.append('folderName', filename);
+            var data = {
+                folderName: filename
+            };
 
-            xhr.send(data);
+            xhr.send(JSON.stringify(data));
         }
 
         // 页面加载完毕时获取下载列表

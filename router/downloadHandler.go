@@ -9,19 +9,21 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"sync"
+	_ "sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sasha-s/go-deadlock"
 )
 
 var (
 	downloading = make(map[string]map[string]*DownloadInfo)
 	downloaded = make(map[string]map[string]*DownloadResp)
-	mutex sync.Mutex
+	mutex deadlock.Mutex
 )
 
 func DownloadHandler(ctx *gin.Context) {
+	deadlock.Opts.DeadlockTimeout = time.Second
 	var downloadInfo DownloadInfo
 	if err := ctx.ShouldBindJSON(&downloadInfo); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
@@ -58,23 +60,23 @@ func DownloadHandler(ctx *gin.Context) {
 		return
 	}
 	downloadInfo.FileLen = stat.Size()
-	downloadInfo.Pause = make(chan struct{})
-	downloadInfo.Resume = make(chan struct{})
-	downloadInfo.Cancel = make(chan struct{})
+	downloadInfo.Pause = make(chan struct{}, 100)
+	downloadInfo.Resume = make(chan struct{}, 100)
+	downloadInfo.Cancel = make(chan struct{}, 100)
 	now := time.Now()
 	downloadInfo.Time = fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second())
 	downloading[downloadInfo.UserName][downloadInfo.FileString] = &downloadInfo
 	logs.GetInstance().Logger.Infof("downloads %+v", downloading)
+	downloadInfo.Wg.Add(1)
 	mutex.Unlock()
 
-	downloadInfo.Wg.Add(1)
 	go func() {
 		isCancel := false
 		defer func() {
 			ctx.Writer.Flush()
 			file.Close()
 			mutex.Lock()
-			fmt.Println("lock")
+			// fmt.Println("lock")
 			downloadInfo.Wg.Done()
 			if form, ok := downloading[downloadInfo.UserName]; ok {
 				if info, ok := form[downloadInfo.FileString]; ok && !isCancel {
@@ -84,12 +86,13 @@ func DownloadHandler(ctx *gin.Context) {
 						Speed: "0MB/s",
 						Time: info.Time,
 						Status: "finish",
+						FileString: info.FileString,
 					}
 				}
 				delete(form, downloadInfo.FileString)
 			}
 			mutex.Unlock()
-			fmt.Println("unlock")
+			// fmt.Println("unlock")
 		}()
 
 		ctx.Writer.Header().Set("Content-Disposition", "attachment; filename="+downloadInfo.FileName)
@@ -106,8 +109,14 @@ func DownloadHandler(ctx *gin.Context) {
 				downloadInfo.Speed = "0MB/s"
 				mutex.Unlock()
 				logs.GetInstance().Logger.Infof("pause download %s", downloadInfo.FileName)
-				<-downloadInfo.Resume
-				logs.GetInstance().Logger.Infof("resume download %s", downloadInfo.FileName)
+				select {
+				case <-downloadInfo.Resume:
+					logs.GetInstance().Logger.Infof("resume download %s", downloadInfo.FileName)
+				case <-downloadInfo.Cancel:
+					isCancel = true
+				logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
+				return
+				}
 			case <-downloadInfo.Cancel:
 				isCancel = true
 				logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
@@ -151,8 +160,6 @@ func DownloadProgressHandler(ctx *gin.Context) {
 			"downloading": []DownloadResp{},
 			"downloaded": downloaded,
 		})
-		mutex.Unlock()
-		// fmt.Println("unlock")
 	} else {
 		resp := make([]DownloadResp, 0, len(downloadInfo))
 		for _, info := range downloadInfo {
@@ -163,6 +170,7 @@ func DownloadProgressHandler(ctx *gin.Context) {
 				Speed: info.Speed,
 				Time: info.Time,
 				Status: info.Status,
+				FileString: info.FileString,
 			})
 		}
 		sort.Slice(resp, func(i, j int) bool {
@@ -172,15 +180,14 @@ func DownloadProgressHandler(ctx *gin.Context) {
 			"downloading": resp,
 			"downloaded": downloaded,
 		})
-		mutex.Unlock()
-		// fmt.Println("unlock")
 	}
+	mutex.Unlock()
 }
 
 func PauseDownloadHandler(ctx *gin.Context) {
 	var request RequestFolder
 	if err := ctx.ShouldBindJSON(&request); err != nil {
-		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
+		logs.GetInstance().Logger.Warnf("cannot bind RequestFolder json")
 	}
 	userName := ctx.Param("username")
 
@@ -190,14 +197,13 @@ func PauseDownloadHandler(ctx *gin.Context) {
 	if info, ok := downloadInfo[request.FolderName]; ok {
 		info.Pause <- struct{}{}
 	}
-	
 	ctx.JSON(http.StatusOK, gin.H{})
 }
 
 func ResumeDownloadHandler(ctx *gin.Context) {
 	var request RequestFolder
 	if err := ctx.ShouldBindJSON(&request); err != nil {
-		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
+		logs.GetInstance().Logger.Warnf("cannot bind RequestFolder json")
 	}
 	userName := ctx.Param("username")
 
@@ -214,7 +220,7 @@ func ResumeDownloadHandler(ctx *gin.Context) {
 func CancelDownloadHandler(ctx *gin.Context) {
 	var request RequestFolder
 	if err := ctx.ShouldBindJSON(&request); err != nil {
-		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
+		logs.GetInstance().Logger.Warnf("cannot bind RequestFolder json")
 	}
 	userName := ctx.Param("username")
 

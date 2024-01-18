@@ -3,7 +3,9 @@ package router
 import (
 	"mime/multipart"
 	"os"
-	"sync"
+	_ "sync"
+
+	"github.com/sasha-s/go-deadlock"
 )
 
 type UserForm struct {
@@ -29,7 +31,7 @@ type DownloadInfo struct {
 	Pause       chan struct{}
 	Resume      chan struct{}
 	Cancel      chan struct{}
-	Wg          sync.WaitGroup
+	Wg          deadlock.WaitGroup
 	Time        string
 	FileLen     int64
 	DownloadLen int64
@@ -38,11 +40,12 @@ type DownloadInfo struct {
 }
 
 type DownloadResp struct {
-	FileName string  `json:"fileName"`
-	Progress float64 `json:"progress"`
-	Speed    string  `json:"speed"`
-	Time     string  `json:"time"`
-	Status   string  `json:"status"`
+	FileName   string  `json:"fileName"`
+	Progress   float64 `json:"progress"`
+	Speed      string  `json:"speed"`
+	Time       string  `json:"time"`
+	Status     string  `json:"status"`
+	FileString string  `json:"fileString"`
 }
 
 type UploadForm struct {

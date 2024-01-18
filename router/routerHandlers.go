@@ -156,7 +156,7 @@ func FileInfoHandler(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&downloadForm); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
 	}
-	logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadForm)
+	// logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadForm)
 	filePath := filepath.Join(downloadForm.FilePath, downloadForm.FileName)
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -175,7 +175,7 @@ func DownloadHandlerV1(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&downloadInfo); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
 	}
-	logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadInfo)
+	// logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadInfo)
 
 	// ctx.Header("Content-Disposition", "attachment; filename="+downloadForm.FileName)
     // ctx.Header("Content-Type", "application/octet-stream")

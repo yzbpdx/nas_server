@@ -50,9 +50,9 @@ func RouterInit(serverConfig *config.ServerConfig) *gin.Engine {
 	ginRouter.POST("/fileInfo", FileInfoHandler)
 	ginRouter.POST(serverConfig.HomeUrl + "/rename", RenameHandler)
 	ginRouter.POST(serverConfig.HomeUrl + "/delete", DeleteHandler)
-	ginRouter.POST(serverConfig.HomeUrl + "/download" + "/pause", PauseDownloadHandler)
-	ginRouter.POST(serverConfig.HomeUrl + "/download" + "/resume", ResumeDownloadHandler)
-	ginRouter.POST(serverConfig.HomeUrl + "/download" + "/cancel", CancelDownloadHandler)
+	ginRouter.POST(serverConfig.HomeUrl + "/download/pause", PauseDownloadHandler)
+	ginRouter.POST(serverConfig.HomeUrl + "/download/resume", ResumeDownloadHandler)
+	ginRouter.POST(serverConfig.HomeUrl + "/download/cancel", CancelDownloadHandler)
 
 	return ginRouter
 }
