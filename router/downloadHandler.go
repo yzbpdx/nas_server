@@ -24,6 +24,9 @@ var (
 )
 
 func DownloadHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	deadlock.Opts.DeadlockTimeout = time.Second
 	var downloadInfo DownloadInfo
 	if err := ctx.ShouldBindJSON(&downloadInfo); err != nil {
@@ -159,6 +162,9 @@ func DownloadHandler(ctx *gin.Context) {
 }
 
 func DownloadProgressHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	userName := ctx.Param("username")
 	mutex.RLock()
 	// fmt.Println("lock")
@@ -192,6 +198,9 @@ func DownloadProgressHandler(ctx *gin.Context) {
 }
 
 func PauseDownloadHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	var request RequestFolder
 	if err := ctx.ShouldBindJSON(&request); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bind RequestFolder json")
@@ -210,6 +219,9 @@ func PauseDownloadHandler(ctx *gin.Context) {
 }
 
 func ResumeDownloadHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	var request RequestFolder
 	if err := ctx.ShouldBindJSON(&request); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bind RequestFolder json")
@@ -229,6 +241,9 @@ func ResumeDownloadHandler(ctx *gin.Context) {
 }
 
 func CancelDownloadHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	var request RequestFolder
 	if err := ctx.ShouldBindJSON(&request); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bind RequestFolder json")

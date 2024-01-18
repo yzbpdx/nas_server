@@ -111,6 +111,9 @@ func RegisterHandler(ctx *gin.Context)  {
 }
 
 func RootFolderHandler(ctx *gin.Context, folderName string) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	if _, err := os.Stat(folderName); err != nil && os.IsNotExist(err) {
 		os.Mkdir(folderName, 0777)
 	}
@@ -132,6 +135,9 @@ func RootFolderHandler(ctx *gin.Context, folderName string) {
 }
 
 func ClickFolderHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	var folderName RequestFolder
 	if err := ctx.ShouldBindJSON(&folderName); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bing folderName json")
@@ -152,6 +158,9 @@ func ClickFolderHandler(ctx *gin.Context) {
 }
 
 func FileInfoHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	var downloadForm DownloadInfo
 	if err := ctx.ShouldBindJSON(&downloadForm); err != nil {
 		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
@@ -245,6 +254,9 @@ func DownloadHandlerV1(ctx *gin.Context) {
 }
 
 func UploadHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	var uploadForm UploadForm
 	if err := ctx.ShouldBind(&uploadForm); err != nil {
 		logs.GetInstance().Logger.Errorf("cannot bind uploadForm: %s", err)
@@ -283,6 +295,9 @@ func UploadHandler(ctx *gin.Context) {
 }
 
 func CreateFolderHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	var createFolder CreateFolder
 	if err := ctx.ShouldBindJSON(&createFolder); err != nil {
 		logs.GetInstance().Logger.Errorf("cannot bind createFolder: %s", err)
@@ -300,6 +315,9 @@ func CreateFolderHandler(ctx *gin.Context) {
 }
 
 func RenameHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	var rename Rename
 	if err := ctx.ShouldBindJSON(&rename); err != nil {
 		logs.GetInstance().Logger.Errorf("cannot bind rename: %s", err)
@@ -322,6 +340,9 @@ func RenameHandler(ctx *gin.Context) {
 }
 
 func DeleteHandler(ctx *gin.Context) {
+	if !CookieVerify(ctx) {
+		return
+	}
 	var delete Delete
 	if err := ctx.ShouldBindJSON(&delete); err != nil {
 		logs.GetInstance().Logger.Errorf("cannot bind delete: %s", err)

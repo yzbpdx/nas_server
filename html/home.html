@@ -73,11 +73,19 @@
 			background-color: #005ea2;
 		}
 
-		.rightLink {
+		.downloadInfoLink {
 			font-size: 15px;
 			margin: 0;
 			position: absolute;
 			right: 20px;
+			color: #fff;
+		}
+
+		.shareLink {
+			font-size: 15px;
+			margin: 0;
+			position: absolute;
+			right: 150px;
 			color: #fff;
 		}
 
@@ -247,13 +255,22 @@
     <script>
         $(document).ready(function() {
 			var currentRouter = window.location.pathname;
+			var user = currentRouter.slice(currentRouter.lastIndexOf('/') + 1, currentRouter.length);
 			var currentPath;
 			var rootPath;
 			var checkboxSelect;
 			var selectType;
 			var downloadInfoLink = document.getElementById("downloadInfo");
-			downloadInfoLink.href = currentRouter + "/download/info"
-
+			if (user === 'share') {
+				var cookieName = document.cookie.slice(9, document.cookie.length);
+				downloadInfoLink.href = currentRouter.slice(0, currentRouter.lastIndexOf('/')) + '/' + cookieName + "/download/info";
+			}
+			else {
+				downloadInfoLink.href = currentRouter + "/download/info";
+			}		
+			var shareLink = document.getElementById("share");
+			shareLink.href = currentRouter.slice(0, currentRouter.lastIndexOf('/')) + "/share";
+			
 			function getRootFolder() {
                 $.ajax({
                     url: currentRouter + '/root',
@@ -534,7 +551,8 @@
 <body>
 	<header>
 		<h1>Current File Path: </h1>
-		<a href="#" target="_blank" id="downloadInfo" class="rightLink">Download Info</a>
+		<a href="#" target="_blank" id="downloadInfo" class="downloadInfoLink">Download Info</a>
+		<a href="#" target="_blank" id="share" class="shareLink">Share</a>
 	</header>
 	<div class="container">
 		<div class="action-buttons-container">
