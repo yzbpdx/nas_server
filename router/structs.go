@@ -2,8 +2,6 @@ package router
 
 import (
 	"mime/multipart"
-	"os"
-	_ "sync"
 
 	"github.com/sasha-s/go-deadlock"
 )
@@ -27,16 +25,19 @@ type DownloadInfo struct {
 	UserName string `json:"userName"`
 
 	FileString  string
-	File        *os.File
-	Pause       chan struct{}
-	Resume      chan struct{}
-	Cancel      chan struct{}
-	Wg          deadlock.WaitGroup
 	Time        string
 	FileLen     int64
 	DownloadLen int64
 	Speed       string
 	Status      string
+}
+
+type DownloadFileSync struct {
+	Pause       chan struct{}
+	Resume      chan struct{}
+	Cancel      chan struct{}
+	Wg          deadlock.WaitGroup
+	Mutex       deadlock.RWMutex
 }
 
 type DownloadResp struct {

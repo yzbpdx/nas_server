@@ -19,7 +19,8 @@ import (
 var (
 	downloading = make(map[string]map[string]*DownloadInfo)
 	downloaded = make(map[string]map[string]*DownloadResp)
-	mutex deadlock.Mutex
+	downloadSync = make(map[string]map[string]*DownloadFileSync)
+	mutex deadlock.RWMutex
 )
 
 func DownloadHandler(ctx *gin.Context) {
@@ -43,6 +44,7 @@ func DownloadHandler(ctx *gin.Context) {
 	} else {
 		downloading[downloadInfo.UserName] = make(map[string]*DownloadInfo)
 		downloaded[downloadInfo.UserName] = make(map[string]*DownloadResp)
+		downloadSync[downloadInfo.UserName] = make(map[string]*DownloadFileSync)
 	}
 
 	file, err := os.Open(filePath)
@@ -60,14 +62,16 @@ func DownloadHandler(ctx *gin.Context) {
 		return
 	}
 	downloadInfo.FileLen = stat.Size()
-	downloadInfo.Pause = make(chan struct{}, 100)
-	downloadInfo.Resume = make(chan struct{}, 100)
-	downloadInfo.Cancel = make(chan struct{}, 100)
+	var fileSync DownloadFileSync
+	fileSync.Pause = make(chan struct{}, 100)
+	fileSync.Resume = make(chan struct{}, 100)
+	fileSync.Cancel = make(chan struct{}, 100)
 	now := time.Now()
 	downloadInfo.Time = fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second())
 	downloading[downloadInfo.UserName][downloadInfo.FileString] = &downloadInfo
+	downloadSync[downloadInfo.UserName][downloadInfo.FileString] = &fileSync
 	logs.GetInstance().Logger.Infof("downloads %+v", downloading)
-	downloadInfo.Wg.Add(1)
+	fileSync.Wg.Add(1)
 	mutex.Unlock()
 
 	go func() {
@@ -75,9 +79,9 @@ func DownloadHandler(ctx *gin.Context) {
 		defer func() {
 			ctx.Writer.Flush()
 			file.Close()
-			mutex.Lock()
+			fileSync.Mutex.Lock()
 			// fmt.Println("lock")
-			downloadInfo.Wg.Done()
+			fileSync.Wg.Done()
 			if form, ok := downloading[downloadInfo.UserName]; ok {
 				if info, ok := form[downloadInfo.FileString]; ok && !isCancel {
 					downloaded[downloadInfo.UserName][info.FileString] = &DownloadResp{
@@ -91,7 +95,10 @@ func DownloadHandler(ctx *gin.Context) {
 				}
 				delete(form, downloadInfo.FileString)
 			}
-			mutex.Unlock()
+			if form, ok := downloadSync[downloadInfo.UserName]; ok {
+				delete(form, downloadInfo.FileString)
+			}
+			fileSync.Mutex.Unlock()
 			// fmt.Println("unlock")
 		}()
 
@@ -103,21 +110,21 @@ func DownloadHandler(ctx *gin.Context) {
 		buf := make([]byte, bufSize)
 		for {
 			select {
-			case <-downloadInfo.Pause:
-				mutex.Lock()
+			case <-fileSync.Pause:
+				fileSync.Mutex.Lock()
 				downloadInfo.Status = "waiting"
 				downloadInfo.Speed = "0MB/s"
-				mutex.Unlock()
+				fileSync.Mutex.Unlock()
 				logs.GetInstance().Logger.Infof("pause download %s", downloadInfo.FileName)
 				select {
-				case <-downloadInfo.Resume:
+				case <-fileSync.Resume:
 					logs.GetInstance().Logger.Infof("resume download %s", downloadInfo.FileName)
-				case <-downloadInfo.Cancel:
+				case <-fileSync.Cancel:
 					isCancel = true
 				logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
 				return
 				}
-			case <-downloadInfo.Cancel:
+			case <-fileSync.Cancel:
 				isCancel = true
 				logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
 				return
@@ -138,22 +145,22 @@ func DownloadHandler(ctx *gin.Context) {
 					return
 				}
 				offset += int64(n)
+				fileSync.Mutex.Lock()
 				duration := time.Since(startTime)
-				mutex.Lock()
 				speed := float64(n) / duration.Seconds() / float64(bufSize)
 				downloadInfo.Speed = fmt.Sprintf("%.2f", speed) + "MB/s"
 				downloadInfo.DownloadLen = offset
 				downloadInfo.Status = "downloading"
-				mutex.Unlock()
+				fileSync.Mutex.Unlock()
 			}
 		}
 	}()
-	downloadInfo.Wg.Wait()
+	fileSync.Wg.Wait()
 }
 
 func DownloadProgressHandler(ctx *gin.Context) {
 	userName := ctx.Param("username")
-	mutex.Lock()
+	mutex.RLock()
 	// fmt.Println("lock")
 	if downloadInfo, ok := downloading[userName]; !ok {
 		ctx.JSON(http.StatusOK, gin.H{
@@ -181,7 +188,7 @@ func DownloadProgressHandler(ctx *gin.Context) {
 			"downloaded": downloaded,
 		})
 	}
-	mutex.Unlock()
+	mutex.RUnlock()
 }
 
 func PauseDownloadHandler(ctx *gin.Context) {
@@ -191,11 +198,13 @@ func PauseDownloadHandler(ctx *gin.Context) {
 	}
 	userName := ctx.Param("username")
 
-	mutex.Lock()
-	defer mutex.Unlock()
-	downloadInfo := downloading[userName]
-	if info, ok := downloadInfo[request.FolderName]; ok {
-		info.Pause <- struct{}{}
+	mutex.RLock()
+	defer mutex.RUnlock()
+	fileSync := downloadSync[userName]
+	if sync, ok := fileSync[request.FolderName]; ok {
+		sync.Mutex.Lock()
+		sync.Pause <- struct{}{}
+		sync.Mutex.Unlock()
 	}
 	ctx.JSON(http.StatusOK, gin.H{})
 }
@@ -207,11 +216,13 @@ func ResumeDownloadHandler(ctx *gin.Context) {
 	}
 	userName := ctx.Param("username")
 
-	mutex.Lock()
-	defer mutex.Unlock()
-	downloadInfo := downloading[userName]
-	if info, ok := downloadInfo[request.FolderName]; ok {
-		info.Resume <- struct{}{}
+	mutex.RLock()
+	defer mutex.RUnlock()
+	fileSync := downloadSync[userName]
+	if sync, ok := fileSync[request.FolderName]; ok {
+		sync.Mutex.Lock()
+		sync.Resume <- struct{}{}
+		sync.Mutex.Unlock()
 	}
 	
 	ctx.JSON(http.StatusOK, gin.H{})
@@ -224,11 +235,13 @@ func CancelDownloadHandler(ctx *gin.Context) {
 	}
 	userName := ctx.Param("username")
 
-	mutex.Lock()
-	defer mutex.Unlock()
-	downloadInfo := downloading[userName]
-	if info, ok := downloadInfo[request.FolderName]; ok {
-		info.Cancel <- struct{}{}
+	mutex.RLock()
+	defer mutex.RUnlock()
+	fileSync := downloadSync[userName]
+	if sync, ok := fileSync[request.FolderName]; ok {
+		sync.Mutex.Lock()
+		sync.Cancel <- struct{}{}
+		sync.Mutex.Unlock()
 	}
 	
 	ctx.JSON(http.StatusOK, gin.H{})
