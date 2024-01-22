@@ -85,7 +85,23 @@
 			font-size: 15px;
 			margin: 0;
 			position: absolute;
-			right: 150px;
+			right: 130px;
+			color: #fff;
+		}
+
+		.jellyfinLink {
+			font-size: 15px;
+			margin: 0;
+			position: absolute;
+			right: 170px;
+			color: #fff;
+		}
+
+		.qBitLink {
+			font-size: 15px;
+			margin: 0;
+			position: absolute;
+			right: 220px;
 			color: #fff;
 		}
 
@@ -278,6 +294,10 @@
 			}		
 			var shareLink = document.getElementById("share");
 			shareLink.href = currentRouter.slice(0, currentRouter.lastIndexOf('/')) + "/share";
+			var jellyfinLink = document.getElementById("jellyfin");
+			jellyfinLink.href = "http://118.31.188.252:8096/"
+			var jellyfinLink = document.getElementById("qBit");
+			jellyfinLink.href = "http://118.31.188.252:9001/"
 			
 			function getRootFolder() {
                 $.ajax({
@@ -561,6 +581,8 @@
 		<h1>Current File Path: </h1>
 		<a href="#" target="_blank" id="downloadInfo" class="downloadInfoLink">Download Info</a>
 		<a href="#" target="_blank" id="share" class="shareLink">Share</a>
+		<a href="#" target="_blank" id="jellyfin" class="jellyfinLink">Jellyfin</a>
+		<a href="#" target="_blank" id="qBit" class="qBitLink">qBit</a>
 	</header>
 	<div class="container">
 		<div class="action-buttons-container">
