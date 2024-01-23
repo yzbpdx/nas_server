@@ -20,6 +20,7 @@ var (
 	downloading = make(map[string]map[string]*DownloadInfo)
 	downloaded = make(map[string]map[string]*DownloadResp)
 	downloadSync = make(map[string]map[string]*DownloadFileSync)
+	userLongPolling = make(map[string]chan struct{})
 	mutex deadlock.RWMutex
 )
 
@@ -48,6 +49,9 @@ func DownloadHandler(ctx *gin.Context) {
 		downloading[downloadInfo.UserName] = make(map[string]*DownloadInfo)
 		downloaded[downloadInfo.UserName] = make(map[string]*DownloadResp)
 		downloadSync[downloadInfo.UserName] = make(map[string]*DownloadFileSync)
+	}
+	if _, ok := userLongPolling[downloadInfo.UserName]; !ok {
+		userLongPolling[downloadInfo.UserName] = make(chan struct{}, 1)
 	}
 
 	file, err := os.Open(filePath)
@@ -83,7 +87,6 @@ func DownloadHandler(ctx *gin.Context) {
 			ctx.Writer.Flush()
 			file.Close()
 			fileSync.Mutex.Lock()
-			// fmt.Println("lock")
 			fileSync.Wg.Done()
 			if form, ok := downloading[downloadInfo.UserName]; ok {
 				if info, ok := form[downloadInfo.FileString]; ok && !isCancel {
@@ -102,7 +105,7 @@ func DownloadHandler(ctx *gin.Context) {
 				delete(form, downloadInfo.FileString)
 			}
 			fileSync.Mutex.Unlock()
-			// fmt.Println("unlock")
+			userLongPolling[downloadInfo.UserName] <- struct{}{}
 		}()
 
 		ctx.Writer.Header().Set("Content-Disposition", "attachment; filename="+downloadInfo.FileName)
@@ -118,21 +121,21 @@ func DownloadHandler(ctx *gin.Context) {
 				downloadInfo.Status = "waiting"
 				downloadInfo.Speed = "0MB/s"
 				fileSync.Mutex.Unlock()
+				userLongPolling[downloadInfo.UserName] <- struct{}{}
 				logs.GetInstance().Logger.Infof("pause download %s", downloadInfo.FileName)
 				select {
 				case <-fileSync.Resume:
 					logs.GetInstance().Logger.Infof("resume download %s", downloadInfo.FileName)
 				case <-fileSync.Cancel:
 					isCancel = true
-				logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
-				return
+					logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
+					return
 				}
 			case <-fileSync.Cancel:
 				isCancel = true
 				logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
 				return
 			default:
-				// time.Sleep(5 * time.Second)
 				startTime := time.Now()
 				n, err := file.ReadAt(buf, offset)
 				if err != nil && err != io.EOF {
@@ -155,6 +158,9 @@ func DownloadHandler(ctx *gin.Context) {
 				downloadInfo.DownloadLen = offset
 				downloadInfo.Status = "downloading"
 				fileSync.Mutex.Unlock()
+				if len(userLongPolling[downloadInfo.UserName]) == 0 {
+					userLongPolling[downloadInfo.UserName] <- struct{}{}
+				}
 			}
 		}
 	}()
@@ -166,8 +172,11 @@ func DownloadProgressHandler(ctx *gin.Context) {
 		return
 	}
 	userName := ctx.Param("username")
+	if _, ok := userLongPolling[userName]; !ok {
+		userLongPolling[userName] = make(chan struct{}, 1)
+	}
+	<-userLongPolling[userName]
 	mutex.RLock()
-	// fmt.Println("lock")
 	if downloadInfo, ok := downloading[userName]; !ok {
 		ctx.JSON(http.StatusOK, gin.H{
 			"downloading": []DownloadResp{},
