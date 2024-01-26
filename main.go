@@ -16,7 +16,7 @@ func main() {
 	config.InitServerConfig("conf/server.yaml")
 	config := config.GetServerConfig()
 	logs.GetInstance().Logger.Infof("config %+v", config)
-	ginRouter := router.RouterInit(&config.Server)
+	ginRouter := router.RouterInit(&config.Server, config.Docker.RegistryPort)
 	redis.RedisInit(&config.Redis)
 	gorm.MysqlInit(&config.MySQL)
 

@@ -85,7 +85,7 @@
 			font-size: 15px;
 			margin: 0;
 			position: absolute;
-			right: 130px;
+			right: 120px;
 			color: #fff;
 		}
 
@@ -93,7 +93,7 @@
 			font-size: 15px;
 			margin: 0;
 			position: absolute;
-			right: 170px;
+			right: 160px;
 			color: #fff;
 		}
 
@@ -101,7 +101,15 @@
 			font-size: 15px;
 			margin: 0;
 			position: absolute;
-			right: 220px;
+			right: 210px;
+			color: #fff;
+		}
+
+		.dockerLink {
+			font-size: 15px;
+			margin: 0;
+			position: absolute;
+			right: 240px;
 			color: #fff;
 		}
 
@@ -276,6 +284,11 @@
 			var rootPath;
 			var checkboxSelect;
 			var selectType;
+			var domain;
+
+			getRootFolder();
+			getUrl();
+
 			var downloadInfoLink = document.getElementById("downloadInfo");
 			if (user === 'share') {
 				var cookies = document.cookie;
@@ -295,9 +308,21 @@
 			var shareLink = document.getElementById("share");
 			shareLink.href = currentRouter.slice(0, currentRouter.lastIndexOf('/')) + "/share";
 			var jellyfinLink = document.getElementById("jellyfin");
-			jellyfinLink.href = "http://118.31.188.252:8096/"
+			jellyfinLink.href = domain + ":8096/";
 			var qBitLink = document.getElementById("qBit");
-			qBitLink.href = "http://118.31.188.252:9001/"
+			qBitLink.href = domain + ":9001/";
+			var dockerLink = document.getElementById("docker");
+			dockerLink.href = currentRouter + '/docker';
+
+			function getUrl() {
+				$.ajax({
+					url: currentRouter + '/domain',
+					method: 'GET',
+					success: function(response) {
+						domain = response.domain;
+					}
+				});
+			}
 			
 			function getRootFolder() {
                 $.ajax({
@@ -306,8 +331,8 @@
                     success: function(response) {
                         showFolders(response.folders);
                         showFiles(response.files);
-						currentPath = response.currentPath
-						rootPath = currentPath
+						currentPath = response.currentPath;
+						rootPath = currentPath;
 						var pageTitle = $('h1');
 						pageTitle.empty();
 						var title = currentPath.slice(currentPath.indexOf('/') + 1, currentPath.length);
@@ -340,7 +365,7 @@
                         showFiles(response.files);
 						var pageTitle = $('h1');
 						pageTitle.empty();
-						currentPath = response.currentPath
+						currentPath = response.currentPath;
 						var title = currentPath.slice(currentPath.indexOf('/') + 1, currentPath.length);
 						title = title.slice(title.indexOf('/') + 1, title.length)
 						title = title.slice(title.indexOf('/') + 1, title.length)
@@ -420,10 +445,11 @@
                 });
             }
 
-            function downloadFile(currentPath, fileName) {
+            function downloadFile(currentPath, fileName, selectType) {
                 var data = {
                     filePath: currentPath,
-					fileName: fileName
+					fileName: fileName,
+					selectType: selectType
 				};
 				var xhr = new XMLHttpRequest();
 				xhr.open('POST', currentRouter + '/download', true);
@@ -452,7 +478,7 @@
 
             $('#filesList').on('click', 'li', function() {
                 var clickFile = $(this).text();
-                downloadFile(currentPath, clickFile);
+                downloadFile(currentPath, clickFile, "file");
             });
 
             $('#backButton').click(function() {
@@ -519,6 +545,10 @@
                 });
 			});
 
+			$('#downloadButton').click(function() {
+                downloadFile(currentPath, checkboxSelect, selectType);
+			});
+
             $('#uploadForm').submit(function(event) {
                 event.preventDefault();
                 var fileInput = $('#uploadFile')[0];
@@ -571,8 +601,6 @@
                     }
                 });
             });
-
-            getRootFolder();
         });
     </script>
 </head>
@@ -583,6 +611,7 @@
 		<a href="#" target="_blank" id="share" class="shareLink">Share</a>
 		<a href="#" target="_blank" id="jellyfin" class="jellyfinLink">Jellyfin</a>
 		<a href="#" target="_blank" id="qBit" class="qBitLink">qBit</a>
+		<a href="#" target="_blank" id="docker" class="dockerLink">docker</a>
 	</header>
 	<div class="container">
 		<div class="action-buttons-container">

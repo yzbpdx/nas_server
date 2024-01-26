@@ -20,9 +20,10 @@ type RequestFolder struct {
 }
 
 type DownloadInfo struct {
-	FilePath string `json:"filePath"`
-	FileName string `json:"fileName"`
-	UserName string `json:"userName"`
+	FilePath   string `json:"filePath"`
+	FileName   string `json:"fileName"`
+	UserName   string `json:"userName"`
+	SelectType string `json:"selectType"`
 
 	FileString  string
 	Time        string
@@ -69,4 +70,13 @@ type Rename struct {
 type Delete struct {
 	CurrentPath string `json:"currentPath"`
 	DeleteName  string `json:"deleteName"`
+}
+
+type DockerRepositry struct {
+	Repository string `json:"repository"`
+	Tag       string `json:"tag"`
+	ImageId   string `json:"imageId"`
+	Created   string `json:"created"`
+	Size      string `json:"size"`
+	Pull      string `json:"pull"`
 }

@@ -361,6 +361,16 @@ func DeleteHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{})
 }
 
+func DomainHandler(ctx *gin.Context) {
+	host := ctx.Request.Host
+	addr := strings.Split(host, ":")
+	domain := "http://" + addr[0]
+	logs.GetInstance().Logger.Infof("get url %s", domain)
+	ctx.JSON(http.StatusOK, gin.H{
+		"domain": domain,
+	})
+}
+
 func getFiles(folderName string, respFolders, respFiles *[]string) error {
 	files, err := os.ReadDir(folderName)
 	if err != nil {

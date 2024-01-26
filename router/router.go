@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RouterInit(serverConfig *config.ServerConfig) *gin.Engine {
+func RouterInit(serverConfig *config.ServerConfig, dockerRegistryPost string) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	ginRouter := gin.Default()
 	ginRouter.LoadHTMLGlob("html/*")
@@ -40,6 +40,13 @@ func RouterInit(serverConfig *config.ServerConfig) *gin.Engine {
 		ctx.HTML(http.StatusOK, "trans.html", gin.H{})
 	})
 	ginRouter.GET(serverConfig.HomeUrl + "/download/info/list", DownloadProgressHandler)
+	ginRouter.GET(serverConfig.HomeUrl + "/domain", DomainHandler)
+	ginRouter.GET(serverConfig.HomeUrl + "/docker", func(ctx *gin.Context) {
+		ctx.HTML(http.StatusOK, "docker.html", gin.H{})
+	})
+	ginRouter.GET(serverConfig.HomeUrl + "/docker/list", func(ctx *gin.Context) {
+		DockerListHandler(ctx, dockerRegistryPost)
+	})
 
 	ginRouter.POST("/login", LoginHandler)
 	ginRouter.POST(serverConfig.HomeUrl + "/folder", ClickFolderHandler)

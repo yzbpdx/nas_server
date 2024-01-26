@@ -34,8 +34,21 @@ func DownloadHandler(ctx *gin.Context) {
 		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
 	}
 	downloadInfo.UserName = ctx.Param("username")
-	// logs.GetInstance().Logger.Infof("downloadForm: %+v", downloadInfo)
 
+	wg := new(deadlock.WaitGroup)
+	if downloadInfo.SelectType == "file" {
+		wg.Add(1)
+		go func () {
+			defer wg.Done()
+			downloadFileHandler(ctx, downloadInfo)
+		}()
+	} else if downloadInfo.SelectType == "folder" {
+		// downloadFolderHandler(ctx, downloadInfo, wg)
+	}
+	wg.Wait()
+}
+
+func downloadFileHandler(ctx *gin.Context, downloadInfo DownloadInfo) {
 	mutex.Lock()
 	filePath := filepath.Join(downloadInfo.FilePath, downloadInfo.FileName)
 	downloadInfo.FileString = filePath
@@ -78,93 +91,107 @@ func DownloadHandler(ctx *gin.Context) {
 	downloading[downloadInfo.UserName][downloadInfo.FileString] = &downloadInfo
 	downloadSync[downloadInfo.UserName][downloadInfo.FileString] = &fileSync
 	logs.GetInstance().Logger.Infof("downloads %+v", downloading)
-	fileSync.Wg.Add(1)
 	mutex.Unlock()
 
-	go func() {
-		isCancel := false
-		defer func() {
-			ctx.Writer.Flush()
-			file.Close()
-			fileSync.Mutex.Lock()
-			fileSync.Wg.Done()
-			if form, ok := downloading[downloadInfo.UserName]; ok {
-				if info, ok := form[downloadInfo.FileString]; ok && !isCancel {
-					downloaded[downloadInfo.UserName][info.FileString] = &DownloadResp{
-						FileName: info.FileName,
-						Progress: 1,
-						Speed: "0MB/s",
-						Time: info.Time,
-						Status: "finish",
-						FileString: info.FileString,
-					}
+	isCancel := false
+	defer func() {
+		ctx.Writer.Flush()
+		file.Close()
+		fileSync.Mutex.Lock()
+		if form, ok := downloading[downloadInfo.UserName]; ok {
+			if info, ok := form[downloadInfo.FileString]; ok && !isCancel {
+				downloaded[downloadInfo.UserName][info.FileString] = &DownloadResp{
+					FileName: info.FileName,
+					Progress: 1,
+					Speed: "0MB/s",
+					Time: info.Time,
+					Status: "finish",
+					FileString: info.FileString,
 				}
-				delete(form, downloadInfo.FileString)
 			}
-			if form, ok := downloadSync[downloadInfo.UserName]; ok {
-				delete(form, downloadInfo.FileString)
-			}
+			delete(form, downloadInfo.FileString)
+		}
+		if form, ok := downloadSync[downloadInfo.UserName]; ok {
+			delete(form, downloadInfo.FileString)
+		}
+		fileSync.Mutex.Unlock()
+		userLongPolling[downloadInfo.UserName] <- struct{}{}
+	}()
+
+	ctx.Writer.Header().Set("Content-Disposition", "attachment; filename="+downloadInfo.FileName)
+	ctx.Writer.Header().Set("Content-Type", "application/octet-stream")
+	ctx.Writer.Header().Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
+	ctx.Writer.Flush()
+	var offset, bufSize int64 = 0, 1024 * 1024
+	buf := make([]byte, bufSize)
+	for {
+		select {
+		case <-fileSync.Pause:
+			fileSync.Mutex.Lock()
+			downloadInfo.Status = "waiting"
+			downloadInfo.Speed = "0MB/s"
 			fileSync.Mutex.Unlock()
 			userLongPolling[downloadInfo.UserName] <- struct{}{}
-		}()
-
-		ctx.Writer.Header().Set("Content-Disposition", "attachment; filename="+downloadInfo.FileName)
-		ctx.Writer.Header().Set("Content-Type", "application/octet-stream")
-		ctx.Writer.Header().Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
-		ctx.Writer.Flush()
-		var offset, bufSize int64 = 0, 1024 * 1024
-		buf := make([]byte, bufSize)
-		for {
+			logs.GetInstance().Logger.Infof("pause download %s", downloadInfo.FileName)
 			select {
-			case <-fileSync.Pause:
-				fileSync.Mutex.Lock()
-				downloadInfo.Status = "waiting"
-				downloadInfo.Speed = "0MB/s"
-				fileSync.Mutex.Unlock()
-				userLongPolling[downloadInfo.UserName] <- struct{}{}
-				logs.GetInstance().Logger.Infof("pause download %s", downloadInfo.FileName)
-				select {
-				case <-fileSync.Resume:
-					logs.GetInstance().Logger.Infof("resume download %s", downloadInfo.FileName)
-				case <-fileSync.Cancel:
-					isCancel = true
-					logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
-					return
-				}
+			case <-fileSync.Resume:
+				logs.GetInstance().Logger.Infof("resume download %s", downloadInfo.FileName)
 			case <-fileSync.Cancel:
 				isCancel = true
 				logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
 				return
-			default:
-				startTime := time.Now()
-				n, err := file.ReadAt(buf, offset)
-				if err != nil && err != io.EOF {
-					logs.GetInstance().Logger.Errorf("read file error %s", err)
-					return
-				}
-				if n == 0 {
-					return
-				}
-				_, err = ctx.Writer.Write(buf[:n])
-				if err != nil {
-					logs.GetInstance().Logger.Errorf("write file error %s", err)
-					return
-				}
-				offset += int64(n)
-				fileSync.Mutex.Lock()
-				duration := time.Since(startTime)
-				speed := float64(n) / duration.Seconds() / float64(bufSize)
-				downloadInfo.Speed = fmt.Sprintf("%.2f", speed) + "MB/s"
-				downloadInfo.DownloadLen = offset
-				downloadInfo.Status = "downloading"
-				fileSync.Mutex.Unlock()
-				if len(userLongPolling[downloadInfo.UserName]) == 0 {
-					userLongPolling[downloadInfo.UserName] <- struct{}{}
-				}
+			}
+		case <-fileSync.Cancel:
+			isCancel = true
+			logs.GetInstance().Logger.Infof("cancel download %s", downloadInfo.FileName)
+			return
+		default:
+			startTime := time.Now()
+			n, err := file.ReadAt(buf, offset)
+			if err != nil && err != io.EOF {
+				logs.GetInstance().Logger.Errorf("read file error %s", err)
+				return
+			}
+			if n == 0 {
+				return
+			}
+			_, err = ctx.Writer.Write(buf[:n])
+			if err != nil {
+				logs.GetInstance().Logger.Errorf("write file error %s", err)
+				return
+			}
+			offset += int64(n)
+			fileSync.Mutex.Lock()
+			duration := time.Since(startTime)
+			speed := float64(n) / duration.Seconds() / float64(bufSize)
+			downloadInfo.Speed = fmt.Sprintf("%.2f", speed) + "MB/s"
+			downloadInfo.DownloadLen = offset
+			downloadInfo.Status = "downloading"
+			fileSync.Mutex.Unlock()
+			if len(userLongPolling[downloadInfo.UserName]) == 0 {
+				userLongPolling[downloadInfo.UserName] <- struct{}{}
 			}
 		}
-	}()
-	fileSync.Wg.Wait()
+	}
+}
+
+func downloadFolderHandler(ctx *gin.Context, downloadInfo DownloadInfo, wg *deadlock.WaitGroup) {
+	filePath := filepath.Join(downloadInfo.FilePath, downloadInfo.FileName)
+	folders, files := make([]string, 0), make([]string, 0)
+	getFiles(filePath, &folders, &files)
+	
+	wg.Add(len(files))
+	for _, file := range files {
+		downloadFileInfo := DownloadInfo {
+			FilePath: downloadInfo.FilePath,
+			FileName: file,
+		}
+		go func (downloadFileInfo DownloadInfo) {
+			defer wg.Done()
+			downloadFileHandler(ctx, downloadFileInfo)
+		}(downloadFileInfo)
+	}
+	wg.Wait()
 }
 
 func DownloadProgressHandler(ctx *gin.Context) {

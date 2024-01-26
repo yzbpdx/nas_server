@@ -14,3 +14,6 @@ mysql:
   password: "123"
   addr: "localhost:3306"
   db: "nas_server"
+
+docker:
+  registryPort: "5000"

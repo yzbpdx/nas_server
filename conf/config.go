@@ -10,31 +10,36 @@ import (
 
 type Config struct {
 	Server ServerConfig `yaml:"server"`
-	Redis RedisConfig `yaml:"redis"`
-	MySQL MySQLConfig `yaml:"mysql"`
+	Redis  RedisConfig  `yaml:"redis"`
+	MySQL  MySQLConfig  `yaml:"mysql"`
+	Docker DockerConfig `yaml:"docker"`
 }
 
 type ServerConfig struct {
-	HomeUrl string `yaml:"homeUrl"`
+	HomeUrl      string `yaml:"homeUrl"`
 	ServerFolder string `yaml:"serverFolder"`
-	Listen string `yaml:"listen"`
-	Share string `yaml:"share"`
+	Listen       string `yaml:"listen"`
+	Share        string `yaml:"share"`
 
-	RootFolder string
+	RootFolder  string
 	ShareFolder string
 }
 
 type RedisConfig struct {
-	Addr string `yaml:"addr"`
+	Addr     string `yaml:"addr"`
 	Password string `yaml:"password"`
-	DB int `yaml:"db"`
+	DB       int `yaml:"db"`
 }
 
 type MySQLConfig struct {
-	Name string `yaml:"name"`
+	Name     string `yaml:"name"`
 	PassWord string `yaml:"password"`
-	Addr string `yaml:"addr"`
-	DB string `yaml:"db"`
+	Addr     string `yaml:"addr"`
+	DB       string `yaml:"db"`
+}
+
+type DockerConfig struct {
+	RegistryPort string `yaml:"registryPort"`
 }
 
 func InitServerConfig(fileName string) {
