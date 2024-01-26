@@ -34,15 +34,17 @@ func DownloadHandler(ctx *gin.Context) {
 		logs.GetInstance().Logger.Warnf("cannot bind downloadForm json")
 	}
 	downloadInfo.UserName = ctx.Param("username")
+	filePath := filepath.Join(downloadInfo.FilePath, downloadInfo.FileName)
+	info, _ := os.Stat(filePath)
 
 	wg := new(deadlock.WaitGroup)
-	if downloadInfo.SelectType == "file" {
+	if info.Mode().IsRegular() {
 		wg.Add(1)
 		go func () {
 			defer wg.Done()
 			downloadFileHandler(ctx, downloadInfo)
 		}()
-	} else if downloadInfo.SelectType == "folder" {
+	} else if info.Mode().IsDir() {
 		// downloadFolderHandler(ctx, downloadInfo, wg)
 	}
 	wg.Wait()
