@@ -307,10 +307,6 @@
 			}		
 			var shareLink = document.getElementById("share");
 			shareLink.href = currentRouter.slice(0, currentRouter.lastIndexOf('/')) + "/share";
-			var jellyfinLink = document.getElementById("jellyfin");
-			jellyfinLink.href = domain + ":8096/";
-			var qBitLink = document.getElementById("qBit");
-			qBitLink.href = domain + ":9001/";
 			var dockerLink = document.getElementById("docker");
 			dockerLink.href = currentRouter + '/docker';
 
@@ -320,6 +316,11 @@
 					method: 'GET',
 					success: function(response) {
 						domain = response.domain;
+						var jellyfinLink = document.getElementById("jellyfin");
+						alert(domain)
+						jellyfinLink.href = domain + ":8096/";
+						var qBitLink = document.getElementById("qBit");
+						qBitLink.href = domain + ":9001/";
 					}
 				});
 			}
