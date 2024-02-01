@@ -33,7 +33,12 @@ func RouterInit(serverConfig *config.ServerConfig, dockerRegistryPost string) *g
 	})
 	ginRouter.GET(serverConfig.HomeUrl + "/root", func(ctx *gin.Context) {
 		userName := ctx.Param("username")
-		folderName := filepath.Join(serverConfig.RootFolder, userName)
+		var folderName string
+		if userName == "share" {
+			folderName = serverConfig.ShareFolder
+		} else {
+			folderName = filepath.Join(serverConfig.RootFolder, userName)
+		}
 		RootFolderHandler(ctx, folderName)
 	})
 	ginRouter.GET(serverConfig.HomeUrl + "/download/info", func(ctx *gin.Context) {

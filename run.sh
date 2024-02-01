@@ -1,13 +1,8 @@
 #!/bin/bash
 
-# 启动 Redis 服务器
-redis-server &
+service mysql start
+service redis-server start
 
-# 等待 Redis 服务器启动
-# sleep 5
+mysql < /server/script.sql
 
-# 启动 Redis CLI
-# redis-cli &
-
-# 启动 nas_server
-# ./nas_server
+/server/nas_server
