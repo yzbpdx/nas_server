@@ -567,6 +567,7 @@
                     data: formData,
                     contentType: false,
                     processData: false,
+					timeout: 600000,
                     success: function(response) {
                         alert("File uploaded successfully!");
                         getFolderFile(currentPath);
