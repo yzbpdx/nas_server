@@ -56,7 +56,7 @@ func InitServerConfig(fileName string) {
 	rootFolder, _ := os.UserHomeDir()
 	config.Server.RootFolder = filepath.Join(rootFolder, config.Server.ServerFolder)
 	initFolder(config.Server.RootFolder)
-	config.Server.ShareFolder = filepath.Join(rootFolder, config.Server.Share)
+	config.Server.ShareFolder = filepath.Join(config.Server.RootFolder, config.Server.Share)
 	initFolder(config.Server.ShareFolder)
 }
 
